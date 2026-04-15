@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom'
+import { Toaster } from 'sonner'
 import { AuthProvider, useAuthContext } from '@/contexts/AuthContext'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { Login } from '@/pages/Login'
@@ -29,6 +30,17 @@ function ProtectedRoute() {
 export function App() {
   return (
     <AuthProvider>
+      <Toaster
+        position="bottom-right"
+        toastOptions={{
+          classNames: {
+            toast: 'bg-zinc-900 border border-zinc-700 text-zinc-100',
+            description: 'text-zinc-400',
+            error: 'bg-zinc-900 border-red-800 text-zinc-100',
+            success: 'bg-zinc-900 border-teal-800 text-zinc-100',
+          },
+        }}
+      />
       <BrowserRouter>
         <Routes>
           <Route path="login" element={<Login />} />

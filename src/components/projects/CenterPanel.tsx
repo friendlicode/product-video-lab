@@ -1,10 +1,18 @@
 import { useState } from 'react'
+import { toast } from 'sonner'
 import { useStoryDirections } from '@/hooks/useStoryDirections'
 import { useHooks } from '@/hooks/useHooks'
 import { useScripts } from '@/hooks/useScripts'
 import { useCaptions } from '@/hooks/useCaptions'
 import { useProductBrief } from '@/hooks/useProductBrief'
 import type { UpdateScriptData } from '@/services/scripts'
+import {
+  generateStoryDirections,
+  generateHooks,
+  generateScript,
+  generateStoryboard,
+  generateCaptions,
+} from '@/services/generation'
 import { StoryArcHealth } from '@/components/generation/StoryArcHealth'
 import { StoryDirections } from '@/components/generation/StoryDirections'
 import { HooksPanel } from '@/components/generation/HooksPanel'
@@ -21,12 +29,6 @@ const TABS = [
   { value: 'captions', label: 'Captions' },
 ]
 
-function placeholder(label: string) {
-  return async () => {
-    console.log(`generation not yet implemented: ${label}`)
-  }
-}
-
 interface Props {
   projectId: string
 }
@@ -35,26 +37,105 @@ export function CenterPanel({ projectId }: Props) {
   const [activeStoryboardVersionId, setActiveStoryboardVersionId] = useState<string | null>(null)
 
   // Data hooks
-  const { data: directions, loading: dirLoading, select: selectDirection } = useStoryDirections(projectId)
+  const { data: directions, loading: dirLoading, select: selectDirection, refetch: refetchDirections } = useStoryDirections(projectId)
   const selectedDirection = directions?.find((d) => d.selected) ?? null
 
-  const { data: hooks, loading: hookLoading, select: selectHook } = useHooks(selectedDirection?.id)
+  const { data: hooks, loading: hookLoading, select: selectHook, refetch: refetchHooks } = useHooks(selectedDirection?.id)
   const selectedHook = hooks?.find((h) => h.selected) ?? null
 
-  const { data: scripts, loading: scriptLoading, select: selectScript, update: updateScript } = useScripts(projectId)
+  const { data: scripts, loading: scriptLoading, select: selectScript, update: updateScript, refetch: refetchScripts } = useScripts(projectId)
   const selectedScript = scripts?.find((s) => s.selected) ?? null
 
-  const { data: captionVersions, loading: captionLoading, save: saveCaptions } = useCaptions(projectId)
+  const { data: captionVersions, loading: captionLoading, save: saveCaptions, refetch: refetchCaptions } = useCaptions(projectId)
 
   const { data: latestBrief } = useProductBrief(projectId)
   const hasBrief = Boolean(latestBrief)
 
-  // Narrative structure for StoryArcHealth -- prefer storyboard scenes (handled inside StoryboardEditor)
-  // At the panel level, show script coverage when not on Storyboard tab
   const narrativeStructure = selectedScript?.narrative_structure ?? null
 
   async function handleUpdateScript(id: string, fields: UpdateScriptData) {
     await updateScript(id, fields)
+  }
+
+  // ── Generation handlers ────────────────────────────────────────────────────
+
+  async function handleGenerateDirections() {
+    if (!latestBrief) {
+      toast.error('Generate a product brief first (in the left panel)')
+      return
+    }
+    try {
+      await generateStoryDirections(projectId, latestBrief.id)
+      refetchDirections()
+      toast.success('Story directions generated!')
+    } catch (e) {
+      toast.error('Failed to generate directions: ' + (e as Error).message)
+    }
+  }
+
+  async function handleGenerateHooks() {
+    if (!selectedDirection) {
+      toast.error('Select a story direction first')
+      return
+    }
+    try {
+      await generateHooks(projectId, selectedDirection.id)
+      refetchHooks()
+      toast.success('Hooks generated!')
+    } catch (e) {
+      toast.error('Failed to generate hooks: ' + (e as Error).message)
+    }
+  }
+
+  async function handleGenerateScript() {
+    if (!selectedDirection) {
+      toast.error('Select a story direction first')
+      return
+    }
+    if (!selectedHook) {
+      toast.error('Select a hook first')
+      return
+    }
+    try {
+      await generateScript(projectId, selectedDirection.id, selectedHook.id)
+      refetchScripts()
+      toast.success('Script generated!')
+    } catch (e) {
+      toast.error('Failed to generate script: ' + (e as Error).message)
+    }
+  }
+
+  async function handleGenerateStoryboard() {
+    if (!selectedScript) {
+      toast.error('Select a script first')
+      return
+    }
+    try {
+      await generateStoryboard(projectId, selectedScript.id)
+      toast.success('Storyboard generated!')
+      // StoryboardEditor calls setVersionsTick after onGenerate resolves
+    } catch (e) {
+      toast.error('Failed to generate storyboard: ' + (e as Error).message)
+      throw e // re-throw so StoryboardEditor skips its refetch tick
+    }
+  }
+
+  async function handleGenerateCaptions() {
+    if (!selectedScript) {
+      toast.error('Select a script first')
+      return
+    }
+    if (!activeStoryboardVersionId) {
+      toast.error('Activate a storyboard version first')
+      return
+    }
+    try {
+      await generateCaptions(projectId, selectedScript.id, activeStoryboardVersionId)
+      refetchCaptions()
+      toast.success('Captions generated!')
+    } catch (e) {
+      toast.error('Failed to generate captions: ' + (e as Error).message)
+    }
   }
 
   return (
@@ -82,7 +163,7 @@ export function CenterPanel({ projectId }: Props) {
               loading={dirLoading}
               hasBrief={hasBrief}
               onSelect={selectDirection}
-              onGenerate={placeholder('story directions')}
+              onGenerate={handleGenerateDirections}
             />
           </TabsContent>
 
@@ -92,7 +173,7 @@ export function CenterPanel({ projectId }: Props) {
               loading={hookLoading}
               selectedDirectionId={selectedDirection?.id}
               onSelect={selectHook}
-              onGenerate={placeholder('hooks')}
+              onGenerate={handleGenerateHooks}
             />
           </TabsContent>
 
@@ -103,7 +184,7 @@ export function CenterPanel({ projectId }: Props) {
               hasSelectedHook={Boolean(selectedHook)}
               onSelectScript={selectScript}
               onUpdateScript={handleUpdateScript}
-              onGenerate={placeholder('script')}
+              onGenerate={handleGenerateScript}
             />
           </TabsContent>
 
@@ -111,7 +192,7 @@ export function CenterPanel({ projectId }: Props) {
             <StoryboardEditor
               projectId={projectId}
               selectedScriptId={selectedScript?.id ?? null}
-              onGenerate={placeholder('storyboard')}
+              onGenerate={handleGenerateStoryboard}
               onVersionChange={setActiveStoryboardVersionId}
             />
           </TabsContent>
@@ -123,7 +204,7 @@ export function CenterPanel({ projectId }: Props) {
               selectedScriptId={selectedScript?.id ?? null}
               selectedStoryboardVersionId={activeStoryboardVersionId}
               onSave={saveCaptions}
-              onGenerate={placeholder('captions')}
+              onGenerate={handleGenerateCaptions}
             />
           </TabsContent>
         </div>

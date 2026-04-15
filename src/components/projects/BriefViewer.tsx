@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { ChevronDown, ChevronRight, Sparkles, Code } from 'lucide-react'
+import { toast } from 'sonner'
 import { useProductBrief } from '@/hooks/useProductBrief'
+import { generateProductBrief } from '@/services/generation'
 import type { DbProductBrief } from '@/types/db'
 import { Button } from '@/components/ui/button'
 import {
@@ -129,9 +131,23 @@ function BriefBody({ brief }: { brief: DbProductBrief }) {
 // ─── Main component ────────────────────────────────────────────────────────────
 
 export function BriefViewer({ projectId }: { projectId: string }) {
-  const { data: latest, allVersions, loading } = useProductBrief(projectId)
+  const { data: latest, allVersions, loading, refetch } = useProductBrief(projectId)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [sectionOpen, setSectionOpen] = useState(true)
+  const [generating, setGenerating] = useState(false)
+
+  async function handleGenerateBrief() {
+    setGenerating(true)
+    try {
+      await generateProductBrief(projectId)
+      refetch()
+      toast.success('Product brief generated!')
+    } catch (e) {
+      toast.error('Failed to generate brief: ' + (e as Error).message)
+    } finally {
+      setGenerating(false)
+    }
+  }
 
   const displayed: DbProductBrief | null =
     selectedId ? (allVersions.find((b) => b.id === selectedId) ?? latest) : latest
@@ -170,14 +186,29 @@ export function BriefViewer({ projectId }: { projectId: string }) {
                 size="sm"
                 variant="outline"
                 className="text-xs border-zinc-700 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 gap-1.5"
-                disabled
+                onClick={handleGenerateBrief}
+                disabled={generating}
               >
-                <Sparkles className="w-3 h-3" />
-                Generate Brief
+                <Sparkles className={`w-3 h-3 ${generating ? 'animate-pulse' : ''}`} />
+                {generating ? 'Generating...' : 'Generate Brief'}
               </Button>
             </div>
           ) : (
             <>
+              {/* Regenerate button */}
+              <div className="px-4 pb-2 flex justify-end">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={handleGenerateBrief}
+                  disabled={generating}
+                  className="h-6 text-xs text-zinc-600 hover:text-zinc-300 gap-1"
+                >
+                  <Sparkles className={`w-3 h-3 ${generating ? 'animate-pulse' : ''}`} />
+                  {generating ? 'Generating...' : 'Regenerate'}
+                </Button>
+              </div>
+
               {/* Version selector */}
               {allVersions.length > 1 && (
                 <div className="px-4 pb-3">

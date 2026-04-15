@@ -71,7 +71,14 @@ export function StoryboardEditor({
 
   async function handleGenerate() {
     setGenerating(true)
-    try { await onGenerate() } finally { setGenerating(false) }
+    try {
+      await onGenerate()
+      setVersionsTick((t) => t + 1)
+    } catch {
+      // Error already surfaced via toast in the caller
+    } finally {
+      setGenerating(false)
+    }
   }
 
   async function handleAddScene() {
