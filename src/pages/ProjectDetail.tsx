@@ -3,6 +3,7 @@ import { Copy, Archive, ArchiveRestore, ArrowLeft } from 'lucide-react'
 import { useProject } from '@/hooks/useProject'
 import { useProjects } from '@/hooks/useProjects'
 import { LeftPanel } from '@/components/projects/LeftPanel'
+import { CenterPanel } from '@/components/projects/CenterPanel'
 import { STATUS_CONFIG } from '@/lib/projectConstants'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -175,8 +176,8 @@ export function ProjectDetail() {
         </div>
 
         {/* Center panel */}
-        <div className="flex-1 overflow-y-auto flex items-center justify-center">
-          <p className="text-zinc-700 text-sm">Pipeline stages -- coming in Phase 6</p>
+        <div className="flex-1 overflow-hidden">
+          <CenterPanel projectId={id!} />
         </div>
 
         {/* Right panel */}

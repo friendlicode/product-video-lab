@@ -15,7 +15,8 @@
       "Bash(supabase db:*)",
       "Bash(npx supabase:*)",
       "Bash(npx shadcn@latest add button card input textarea select badge skeleton label separator --yes)",
-      "Bash(npx shadcn@latest add dialog collapsible --yes)"
+      "Bash(npx shadcn@latest add dialog collapsible --yes)",
+      "Bash(npx shadcn@latest add tabs --yes)"
     ]
   }
 }

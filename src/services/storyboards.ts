@@ -139,6 +139,52 @@ export async function deleteScene(sceneId: string): Promise<void> {
   if (error) throw error
 }
 
+export async function addScene(
+  storyboardVersionId: string,
+  afterIndex: number
+): Promise<DbStoryboardScene> {
+  // Shift all scenes after afterIndex up by 1
+  const { data: toShift, error: shiftFetchErr } = await supabase
+    .from('storyboard_scenes')
+    .select('id, scene_index')
+    .eq('storyboard_version_id', storyboardVersionId)
+    .gt('scene_index', afterIndex)
+  if (shiftFetchErr) throw shiftFetchErr
+
+  await Promise.all(
+    (toShift ?? []).map((s) =>
+      supabase
+        .from('storyboard_scenes')
+        .update({ scene_index: s.scene_index + 1 })
+        .eq('id', s.id)
+        .then(({ error }) => { if (error) throw error })
+    )
+  )
+
+  const { data, error } = await supabase
+    .from('storyboard_scenes')
+    .insert({
+      storyboard_version_id: storyboardVersionId,
+      scene_index: afterIndex + 1,
+      scene_type: 'text_overlay' as const,
+      narrative_role: 'hook' as const,
+      duration_seconds: 3,
+      asset_id: null,
+      visual_instruction: null,
+      motion_type: 'static',
+      on_screen_text: null,
+      voiceover_line: null,
+      caption_text: null,
+      callout_text: null,
+      transition_type: 'cut',
+      metadata: {},
+    })
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
 export async function duplicateScene(sceneId: string): Promise<DbStoryboardScene> {
   const { data: original, error: fetchErr } = await supabase
     .from('storyboard_scenes')

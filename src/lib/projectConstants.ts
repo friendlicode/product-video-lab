@@ -1,4 +1,7 @@
-import type { ProjectStatus, TargetPlatform, TonePreset, AssetType } from '@/types/index'
+import type {
+  ProjectStatus, TargetPlatform, TonePreset, AssetType,
+  NarrativeRole, NarrativeType, HookType, SceneType,
+} from '@/types/index'
 
 export const STATUS_CONFIG: Record<ProjectStatus, { label: string; classes: string }> = {
   draft: { label: 'Draft', classes: 'bg-zinc-800 text-zinc-400 border-zinc-700' },
@@ -71,4 +74,68 @@ export const ASSET_TYPE_OPTIONS: { value: AssetType; label: string }[] = [
   { value: 'logo', label: 'Logo' },
   { value: 'brand_asset', label: 'Brand Asset' },
   { value: 'other', label: 'Other' },
+]
+
+// ─── Narrative role colors ─────────────────────────────────────────────────────
+
+export const ROLE_CONFIG: Record<NarrativeRole, { label: string; bg: string; dim: string; text: string; border: string }> = {
+  hook:    { label: 'Hook',    bg: 'bg-red-500',    dim: 'bg-red-950',    text: 'text-red-300',    border: 'border-red-800' },
+  problem: { label: 'Problem', bg: 'bg-orange-500', dim: 'bg-orange-950', text: 'text-orange-300', border: 'border-orange-800' },
+  shift:   { label: 'Shift',   bg: 'bg-blue-500',   dim: 'bg-blue-950',   text: 'text-blue-300',   border: 'border-blue-800' },
+  proof:   { label: 'Proof',   bg: 'bg-green-500',  dim: 'bg-green-950',  text: 'text-green-300',  border: 'border-green-800' },
+  payoff:  { label: 'Payoff',  bg: 'bg-purple-500', dim: 'bg-purple-950', text: 'text-purple-300', border: 'border-purple-800' },
+  cta:     { label: 'CTA',     bg: 'bg-yellow-500', dim: 'bg-yellow-950', text: 'text-yellow-300', border: 'border-yellow-800' },
+}
+
+// ─── Narrative type labels ─────────────────────────────────────────────────────
+
+export const NARRATIVE_TYPE_LABELS: Record<NarrativeType, string> = {
+  pain_to_solution:         'Pain to Solution',
+  before_after:             'Before / After',
+  contrarian_insight:       'Contrarian Insight',
+  founder_reveal:           'Founder Reveal',
+  hidden_cost:              'Hidden Cost',
+  workflow_transformation:  'Workflow Transformation',
+  speed_and_efficiency:     'Speed & Efficiency',
+  social_proof:             'Social Proof',
+  category_reframe:         'Category Reframe',
+}
+
+// ─── Hook type labels ──────────────────────────────────────────────────────────
+
+export const HOOK_TYPE_LABELS: Record<HookType, string> = {
+  question:     'Question',
+  statistic:    'Statistic',
+  bold_claim:   'Bold Claim',
+  pain_point:   'Pain Point',
+  contrarian:   'Contrarian',
+  story_opener: 'Story Opener',
+  visual_hook:  'Visual Hook',
+}
+
+// ─── Scene type labels ─────────────────────────────────────────────────────────
+
+export const SCENE_TYPE_LABELS: Record<SceneType, string> = {
+  text_overlay:     'Text Overlay',
+  screenshot_pan:   'Screenshot Pan',
+  screenshot_zoom:  'Screenshot Zoom',
+  video_clip:       'Video Clip',
+  split_screen:     'Split Screen',
+  logo_reveal:      'Logo Reveal',
+  cta_card:         'CTA Card',
+  transition_card:  'Transition Card',
+  custom:           'Custom',
+}
+
+export const SCENE_TYPE_OPTIONS: { value: SceneType; label: string }[] = (
+  Object.entries(SCENE_TYPE_LABELS) as [SceneType, string][]
+).map(([value, label]) => ({ value, label }))
+
+export const TRANSITION_OPTIONS = [
+  { value: 'cut',      label: 'Cut' },
+  { value: 'fade',     label: 'Fade' },
+  { value: 'dissolve', label: 'Dissolve' },
+  { value: 'slide',    label: 'Slide' },
+  { value: 'wipe',     label: 'Wipe' },
+  { value: 'zoom',     label: 'Zoom' },
 ]
