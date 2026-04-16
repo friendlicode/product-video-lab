@@ -1,12 +1,23 @@
+import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Copy, Archive, ArchiveRestore, ArrowLeft } from 'lucide-react'
+import { Copy, Archive, ArchiveRestore, ArrowLeft, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from 'lucide-react'
+import { toast } from 'sonner'
 import { useProject } from '@/hooks/useProject'
 import { useProjects } from '@/hooks/useProjects'
 import { LeftPanel } from '@/components/projects/LeftPanel'
 import { CenterPanel } from '@/components/projects/CenterPanel'
+import { RightPanel } from '@/components/projects/RightPanel'
 import { STATUS_CONFIG } from '@/lib/projectConstants'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
 
 function ProjectHeader({
   project,
@@ -14,12 +25,20 @@ function ProjectHeader({
   onArchive,
   onUnarchive,
   busy,
+  leftCollapsed,
+  rightCollapsed,
+  onToggleLeft,
+  onToggleRight,
 }: {
   project: NonNullable<ReturnType<typeof useProject>['data']>
   onDuplicate: () => void
   onArchive: () => void
   onUnarchive: () => void
   busy: boolean
+  leftCollapsed: boolean
+  rightCollapsed: boolean
+  onToggleLeft: () => void
+  onToggleRight: () => void
 }) {
   const navigate = useNavigate()
   const status = STATUS_CONFIG[project.status]
@@ -32,6 +51,13 @@ function ProjectHeader({
         className="text-zinc-500 hover:text-zinc-300 transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
+      </button>
+      <button
+        onClick={onToggleLeft}
+        className="text-zinc-600 hover:text-zinc-400 transition-colors"
+        title={leftCollapsed ? 'Expand left panel' : 'Collapse left panel'}
+      >
+        {leftCollapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
       </button>
 
       <div className="flex-1 min-w-0">
@@ -49,6 +75,13 @@ function ProjectHeader({
       </div>
 
       <div className="flex items-center gap-2 shrink-0">
+        <button
+          onClick={onToggleRight}
+          className="text-zinc-600 hover:text-zinc-400 transition-colors"
+          title={rightCollapsed ? 'Expand right panel' : 'Collapse right panel'}
+        >
+          {rightCollapsed ? <PanelRightOpen className="w-4 h-4" /> : <PanelRightClose className="w-4 h-4" />}
+        </button>
         <Button
           variant="ghost"
           size="sm"
@@ -138,22 +171,56 @@ export function ProjectDetail() {
   const { data: project, loading, error, refetch } = useProject(id)
   const { duplicate, archive, unarchive } = useProjects()
 
+  // Lifted from CenterPanel so RightPanel can read current selections
+  const [selectedScriptId, setSelectedScriptId] = useState<string | null>(null)
+  const [activeStoryboardVersionId, setActiveStoryboardVersionId] = useState<string | null>(null)
+
+  const [busy, setBusy] = useState(false)
+  const [archiveOpen, setArchiveOpen] = useState(false)
+  const [leftCollapsed, setLeftCollapsed] = useState(false)
+  const [rightCollapsed, setRightCollapsed] = useState(false)
+
   async function handleDuplicate() {
     if (!id) return
-    const newProject = await duplicate(id)
-    navigate(`/projects/${newProject.id}`)
+    setBusy(true)
+    try {
+      const newProject = await duplicate(id)
+      toast.success('Project duplicated')
+      navigate(`/projects/${newProject.id}`)
+    } catch (e) {
+      toast.error('Failed to duplicate: ' + (e as Error).message)
+    } finally {
+      setBusy(false)
+    }
   }
 
-  async function handleArchive() {
+  async function handleArchiveConfirm() {
     if (!id) return
-    await archive(id)
-    refetch()
+    setArchiveOpen(false)
+    setBusy(true)
+    try {
+      await archive(id)
+      toast.success('Project archived')
+      navigate('/')
+    } catch (e) {
+      toast.error('Failed to archive: ' + (e as Error).message)
+    } finally {
+      setBusy(false)
+    }
   }
 
   async function handleUnarchive() {
     if (!id) return
-    await unarchive(id)
-    refetch()
+    setBusy(true)
+    try {
+      await unarchive(id)
+      refetch()
+      toast.success('Project unarchived')
+    } catch (e) {
+      toast.error('Failed to unarchive: ' + (e as Error).message)
+    } finally {
+      setBusy(false)
+    }
   }
 
   if (loading) return <LoadingShell />
@@ -164,27 +231,74 @@ export function ProjectDetail() {
       <ProjectHeader
         project={project}
         onDuplicate={handleDuplicate}
-        onArchive={handleArchive}
+        onArchive={() => setArchiveOpen(true)}
         onUnarchive={handleUnarchive}
-        busy={false}
+        busy={busy}
+        leftCollapsed={leftCollapsed}
+        rightCollapsed={rightCollapsed}
+        onToggleLeft={() => setLeftCollapsed((v) => !v)}
+        onToggleRight={() => setRightCollapsed((v) => !v)}
       />
 
       <div className="flex flex-1 overflow-hidden">
         {/* Left panel */}
-        <div className="w-80 shrink-0 border-r border-zinc-800 overflow-y-auto">
+        <div
+          className={`shrink-0 border-r border-zinc-800 overflow-y-auto transition-[width] duration-200 ${
+            leftCollapsed ? 'w-0 overflow-hidden' : 'w-80'
+          }`}
+        >
           <LeftPanel projectId={id!} project={project} onProjectUpdate={refetch} />
         </div>
 
         {/* Center panel */}
         <div className="flex-1 overflow-hidden">
-          <CenterPanel projectId={id!} />
+          <CenterPanel
+            projectId={id!}
+            onSelectedScriptChange={setSelectedScriptId}
+            onActiveStoryboardVersionChange={setActiveStoryboardVersionId}
+          />
         </div>
 
         {/* Right panel */}
-        <div className="w-[360px] shrink-0 border-l border-zinc-800 overflow-y-auto flex items-center justify-center">
-          <p className="text-zinc-700 text-sm">Activity + approvals -- coming in Phase 6</p>
+        <div
+          className={`shrink-0 border-l border-zinc-800 overflow-hidden transition-[width] duration-200 ${
+            rightCollapsed ? 'w-0' : 'w-[360px]'
+          }`}
+        >
+          <RightPanel
+            projectId={id!}
+            selectedScriptId={selectedScriptId}
+            activeStoryboardVersionId={activeStoryboardVersionId}
+          />
         </div>
       </div>
+
+      {/* Archive confirmation dialog */}
+      <Dialog open={archiveOpen} onOpenChange={setArchiveOpen}>
+        <DialogContent className="bg-zinc-900 border-zinc-700 text-zinc-100 max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-zinc-100">Archive this project?</DialogTitle>
+            <DialogDescription className="text-zinc-400">
+              It will be hidden from the main project list. You can unarchive it at any time.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button
+              variant="ghost"
+              onClick={() => setArchiveOpen(false)}
+              className="text-zinc-400 hover:text-zinc-100"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleArchiveConfirm}
+              className="bg-amber-600 text-white hover:bg-amber-500"
+            >
+              Archive
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

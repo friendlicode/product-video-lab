@@ -2,6 +2,19 @@ import { supabase } from '@/lib/supabase'
 import type { RenderStatus } from '@/types/index'
 import type { DbRenderPayload, DbRenderJob } from '@/types/db'
 
+export type DbRenderJobWithProject = DbRenderJob & {
+  project: { id: string; product_name: string; internal_name: string } | null
+}
+
+export async function getRenderJobsWithProject(): Promise<DbRenderJobWithProject[]> {
+  const { data, error } = await supabase
+    .from('render_jobs')
+    .select('*, project:projects(id, product_name, internal_name)')
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return (data ?? []) as DbRenderJobWithProject[]
+}
+
 async function getCurrentUserId(): Promise<string> {
   const {
     data: { user },

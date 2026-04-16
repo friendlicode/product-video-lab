@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Sparkles, Save } from 'lucide-react'
 import type { DbScript } from '@/types/db'
 import type { NarrativeRole } from '@/types/index'
@@ -18,6 +18,7 @@ interface Props {
   scripts: DbScript[] | null
   loading: boolean
   hasSelectedHook: boolean
+  generatingLock?: boolean
   onSelectScript: (id: string) => Promise<void>
   onUpdateScript: (id: string, fields: UpdateScriptData) => Promise<unknown>
   onGenerate: () => Promise<void>
@@ -30,6 +31,7 @@ export function ScriptEditor({
   scripts,
   loading,
   hasSelectedHook,
+  generatingLock,
   onSelectScript,
   onUpdateScript,
   onGenerate,
@@ -68,7 +70,9 @@ export function ScriptEditor({
     if (selectedScript && !viewId) setViewId(selectedScript.id)
   }, [selectedScript?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function handleSave() {
+  const handleSaveRef = useRef<() => void>(() => {})
+
+  const handleSave = useCallback(async () => {
     if (!viewScript) return
     setSaving(true)
     try {
@@ -83,7 +87,20 @@ export function ScriptEditor({
     } finally {
       setSaving(false)
     }
-  }
+  }, [viewScript, narrative, voiceover, ctaScript, duration, onUpdateScript])
+
+  handleSaveRef.current = handleSave
+
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault()
+        handleSaveRef.current()
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [])
 
   async function handleGenerate() {
     setGenerating(true)
@@ -153,12 +170,12 @@ export function ScriptEditor({
         <Button
           size="sm"
           onClick={handleGenerate}
-          disabled={generating || !hasSelectedHook}
+          disabled={generating || generatingLock || !hasSelectedHook}
           title={!hasSelectedHook ? 'Select a hook first' : undefined}
           className="h-7 text-xs bg-zinc-100 text-zinc-900 hover:bg-zinc-200 gap-1.5 disabled:opacity-40"
         >
           <Sparkles className="w-3 h-3" />
-          {generating ? 'Generating...' : 'Generate Script'}
+          {generating ? 'Writing your script...' : 'Generate Script'}
         </Button>
       </div>
 

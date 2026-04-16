@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { useStoryDirections } from '@/hooks/useStoryDirections'
 import { useHooks } from '@/hooks/useHooks'
@@ -31,10 +31,13 @@ const TABS = [
 
 interface Props {
   projectId: string
+  onSelectedScriptChange?: (id: string | null) => void
+  onActiveStoryboardVersionChange?: (id: string | null) => void
 }
 
-export function CenterPanel({ projectId }: Props) {
+export function CenterPanel({ projectId, onSelectedScriptChange, onActiveStoryboardVersionChange }: Props) {
   const [activeStoryboardVersionId, setActiveStoryboardVersionId] = useState<string | null>(null)
+  const [anyGenerating, setAnyGenerating] = useState(false)
 
   // Data hooks
   const { data: directions, loading: dirLoading, select: selectDirection, refetch: refetchDirections } = useStoryDirections(projectId)
@@ -53,6 +56,16 @@ export function CenterPanel({ projectId }: Props) {
 
   const narrativeStructure = selectedScript?.narrative_structure ?? null
 
+  // Notify parent when selected script changes
+  useEffect(() => {
+    onSelectedScriptChange?.(selectedScript?.id ?? null)
+  }, [selectedScript?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  function handleStoryboardVersionChange(id: string | null) {
+    setActiveStoryboardVersionId(id)
+    onActiveStoryboardVersionChange?.(id)
+  }
+
   async function handleUpdateScript(id: string, fields: UpdateScriptData) {
     await updateScript(id, fields)
   }
@@ -64,12 +77,15 @@ export function CenterPanel({ projectId }: Props) {
       toast.error('Generate a product brief first (in the left panel)')
       return
     }
+    setAnyGenerating(true)
     try {
       await generateStoryDirections(projectId, latestBrief.id)
       refetchDirections()
       toast.success('Story directions generated!')
     } catch (e) {
       toast.error('Failed to generate directions: ' + (e as Error).message)
+    } finally {
+      setAnyGenerating(false)
     }
   }
 
@@ -78,12 +94,15 @@ export function CenterPanel({ projectId }: Props) {
       toast.error('Select a story direction first')
       return
     }
+    setAnyGenerating(true)
     try {
       await generateHooks(projectId, selectedDirection.id)
       refetchHooks()
       toast.success('Hooks generated!')
     } catch (e) {
       toast.error('Failed to generate hooks: ' + (e as Error).message)
+    } finally {
+      setAnyGenerating(false)
     }
   }
 
@@ -96,12 +115,15 @@ export function CenterPanel({ projectId }: Props) {
       toast.error('Select a hook first')
       return
     }
+    setAnyGenerating(true)
     try {
       await generateScript(projectId, selectedDirection.id, selectedHook.id)
       refetchScripts()
       toast.success('Script generated!')
     } catch (e) {
       toast.error('Failed to generate script: ' + (e as Error).message)
+    } finally {
+      setAnyGenerating(false)
     }
   }
 
@@ -110,6 +132,7 @@ export function CenterPanel({ projectId }: Props) {
       toast.error('Select a script first')
       return
     }
+    setAnyGenerating(true)
     try {
       await generateStoryboard(projectId, selectedScript.id)
       toast.success('Storyboard generated!')
@@ -117,6 +140,8 @@ export function CenterPanel({ projectId }: Props) {
     } catch (e) {
       toast.error('Failed to generate storyboard: ' + (e as Error).message)
       throw e // re-throw so StoryboardEditor skips its refetch tick
+    } finally {
+      setAnyGenerating(false)
     }
   }
 
@@ -129,12 +154,15 @@ export function CenterPanel({ projectId }: Props) {
       toast.error('Activate a storyboard version first')
       return
     }
+    setAnyGenerating(true)
     try {
       await generateCaptions(projectId, selectedScript.id, activeStoryboardVersionId)
       refetchCaptions()
       toast.success('Captions generated!')
     } catch (e) {
       toast.error('Failed to generate captions: ' + (e as Error).message)
+    } finally {
+      setAnyGenerating(false)
     }
   }
 
@@ -162,6 +190,7 @@ export function CenterPanel({ projectId }: Props) {
               directions={directions}
               loading={dirLoading}
               hasBrief={hasBrief}
+              generatingLock={anyGenerating}
               onSelect={selectDirection}
               onGenerate={handleGenerateDirections}
             />
@@ -172,6 +201,7 @@ export function CenterPanel({ projectId }: Props) {
               hooks={hooks}
               loading={hookLoading}
               selectedDirectionId={selectedDirection?.id}
+              generatingLock={anyGenerating}
               onSelect={selectHook}
               onGenerate={handleGenerateHooks}
             />
@@ -182,6 +212,7 @@ export function CenterPanel({ projectId }: Props) {
               scripts={scripts}
               loading={scriptLoading}
               hasSelectedHook={Boolean(selectedHook)}
+              generatingLock={anyGenerating}
               onSelectScript={selectScript}
               onUpdateScript={handleUpdateScript}
               onGenerate={handleGenerateScript}
@@ -192,8 +223,9 @@ export function CenterPanel({ projectId }: Props) {
             <StoryboardEditor
               projectId={projectId}
               selectedScriptId={selectedScript?.id ?? null}
+              generatingLock={anyGenerating}
               onGenerate={handleGenerateStoryboard}
-              onVersionChange={setActiveStoryboardVersionId}
+              onVersionChange={handleStoryboardVersionChange}
             />
           </TabsContent>
 
@@ -203,6 +235,7 @@ export function CenterPanel({ projectId }: Props) {
               loading={captionLoading}
               selectedScriptId={selectedScript?.id ?? null}
               selectedStoryboardVersionId={activeStoryboardVersionId}
+              generatingLock={anyGenerating}
               onSave={saveCaptions}
               onGenerate={handleGenerateCaptions}
             />

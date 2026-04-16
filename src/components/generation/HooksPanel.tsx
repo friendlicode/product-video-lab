@@ -8,6 +8,7 @@ interface Props {
   hooks: DbHook[] | null
   loading: boolean
   selectedDirectionId: string | undefined
+  generatingLock?: boolean
   onSelect: (id: string) => Promise<void>
   onGenerate: () => Promise<void>
 }
@@ -89,7 +90,7 @@ function HookCard({ hook, onSelect }: { hook: DbHook; onSelect: (id: string) => 
   )
 }
 
-export function HooksPanel({ hooks, loading, selectedDirectionId, onSelect, onGenerate }: Props) {
+export function HooksPanel({ hooks, loading, selectedDirectionId, generatingLock, onSelect, onGenerate }: Props) {
   const [generating, setGenerating] = useState(false)
 
   async function handleGenerate() {
@@ -116,11 +117,11 @@ export function HooksPanel({ hooks, loading, selectedDirectionId, onSelect, onGe
         <Button
           size="sm"
           onClick={handleGenerate}
-          disabled={generating}
-          className="h-7 text-xs bg-zinc-100 text-zinc-900 hover:bg-zinc-200 gap-1.5"
+          disabled={generating || generatingLock}
+          className="h-7 text-xs bg-zinc-100 text-zinc-900 hover:bg-zinc-200 gap-1.5 disabled:opacity-40"
         >
           <Sparkles className="w-3 h-3" />
-          {generating ? 'Generating...' : 'Generate Hooks'}
+          {generating ? 'Generating hooks...' : 'Generate Hooks'}
         </Button>
       </div>
 

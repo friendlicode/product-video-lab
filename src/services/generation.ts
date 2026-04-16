@@ -5,6 +5,7 @@
 import { supabase } from '@/lib/supabase'
 import { callOpenAI } from '@/lib/openai'
 import type { OpenAIMessage } from '@/lib/openai'
+import { getSettings } from '@/lib/settings'
 import { logActivity } from './activity'
 import { saveBrief, getLatestBrief } from './briefs'
 import { saveStoryDirections, getStoryDirections } from './stories'
@@ -82,7 +83,7 @@ export async function generateProductBrief(projectId: string): Promise<DbProduct
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userContent },
     ],
-    { model: 'gpt-4o', response_format: { type: 'json_object' } }
+    { model: getSettings().highStakesModel, response_format: { type: 'json_object' } }
   )
 
   const userId = await getCurrentUserId()
@@ -137,7 +138,7 @@ export async function generateStoryDirections(
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userContent },
     ],
-    { model: 'gpt-4o', response_format: { type: 'json_object' } }
+    { model: getSettings().highStakesModel, response_format: { type: 'json_object' } }
   )
 
   const rawDirections = Array.isArray(raw?.directions) ? raw.directions : []
@@ -207,7 +208,7 @@ export async function generateHooks(
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userContent },
     ],
-    { model: 'gpt-4o-mini', response_format: { type: 'json_object' } }
+    { model: getSettings().lightweightModel, response_format: { type: 'json_object' } }
   )
 
   const rawHooks = Array.isArray(raw?.hooks) ? raw.hooks : []
@@ -290,7 +291,7 @@ export async function generateScript(
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userContent },
     ],
-    { model: 'gpt-4o', response_format: { type: 'json_object' } }
+    { model: getSettings().highStakesModel, response_format: { type: 'json_object' } }
   )
 
   const userId = await getCurrentUserId()
@@ -365,7 +366,7 @@ export async function generateStoryboard(
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userContent },
     ],
-    { model: 'gpt-4o-mini', response_format: { type: 'json_object' } }
+    { model: getSettings().lightweightModel, response_format: { type: 'json_object' } }
   )
 
   const rawScenes = Array.isArray(raw?.scenes) ? raw.scenes : []
@@ -447,7 +448,7 @@ export async function generateCaptions(
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userContent },
     ],
-    { model: 'gpt-4o-mini', response_format: { type: 'json_object' } }
+    { model: getSettings().lightweightModel, response_format: { type: 'json_object' } }
   )
 
   const rawSegments = Array.isArray(raw?.segments) ? raw.segments : []

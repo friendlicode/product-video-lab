@@ -8,6 +8,7 @@ interface Props {
   directions: DbStoryDirection[] | null
   loading: boolean
   hasBrief: boolean
+  generatingLock?: boolean
   onSelect: (id: string) => Promise<void>
   onGenerate: () => Promise<void>
 }
@@ -95,7 +96,7 @@ function DirectionCard({
   )
 }
 
-export function StoryDirections({ directions, loading, hasBrief, onSelect, onGenerate }: Props) {
+export function StoryDirections({ directions, loading, hasBrief, generatingLock, onSelect, onGenerate }: Props) {
   const [generating, setGenerating] = useState(false)
   const hasDirections = (directions?.length ?? 0) > 0
 
@@ -117,7 +118,7 @@ export function StoryDirections({ directions, loading, hasBrief, onSelect, onGen
             size="sm"
             variant="ghost"
             onClick={handleGenerate}
-            disabled={generating || !hasBrief}
+            disabled={generating || generatingLock || !hasBrief}
             className="h-7 text-xs text-zinc-400 hover:text-zinc-100 gap-1.5"
           >
             <RefreshCw className={`w-3 h-3 ${generating ? 'animate-spin' : ''}`} />
@@ -128,12 +129,12 @@ export function StoryDirections({ directions, loading, hasBrief, onSelect, onGen
         <Button
           size="sm"
           onClick={handleGenerate}
-          disabled={generating || !hasBrief}
+          disabled={generating || generatingLock || !hasBrief}
           title={!hasBrief ? 'Generate a product brief first' : undefined}
           className="h-7 text-xs bg-zinc-100 text-zinc-900 hover:bg-zinc-200 gap-1.5 disabled:opacity-40"
         >
           <Sparkles className="w-3 h-3" />
-          {generating ? 'Generating...' : 'Generate Directions'}
+          {generating ? 'Crafting story directions...' : 'Generate Directions'}
         </Button>
       </div>
 

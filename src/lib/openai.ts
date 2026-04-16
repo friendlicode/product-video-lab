@@ -1,5 +1,18 @@
-const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY as string
+const OPENAI_API_KEY_ENV = import.meta.env.VITE_OPENAI_API_KEY as string
 const OPENAI_BASE_URL = 'https://api.openai.com/v1'
+
+function getApiKey(): string {
+  try {
+    const stored = localStorage.getItem('vpl_settings')
+    if (stored) {
+      const s = JSON.parse(stored) as Record<string, string>
+      if (s.openAiApiKey) return s.openAiApiKey
+    }
+  } catch {
+    // ignore
+  }
+  return OPENAI_API_KEY_ENV
+}
 
 export type OpenAIModel =
   | 'gpt-4o'
@@ -53,9 +66,10 @@ export async function callOpenAI<T = unknown>(
     response_format,
   } = options
 
-  if (!OPENAI_API_KEY) {
+  const apiKey = getApiKey()
+  if (!apiKey) {
     throw new Error(
-      '[openai] VITE_OPENAI_API_KEY is not set. Add it to your .env.local file.'
+      '[openai] No API key found. Set VITE_OPENAI_API_KEY or add your key in Settings.'
     )
   }
 
@@ -71,7 +85,7 @@ export async function callOpenAI<T = unknown>(
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${OPENAI_API_KEY}`,
+      Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify(body),
   })

@@ -16,6 +16,7 @@ interface Props {
   loading: boolean
   selectedScriptId: string | null
   selectedStoryboardVersionId: string | null
+  generatingLock?: boolean
   onSave: (scriptId: string, storyboardVersionId: string, segments: CaptionSegment[]) => Promise<unknown>
   onGenerate: () => Promise<void>
 }
@@ -40,6 +41,7 @@ export function CaptionsPanel({
   loading,
   selectedScriptId,
   selectedStoryboardVersionId,
+  generatingLock,
   onSave,
   onGenerate,
 }: Props) {
@@ -135,11 +137,11 @@ export function CaptionsPanel({
         <Button
           size="sm"
           onClick={handleGenerate}
-          disabled={generating || !canSave}
+          disabled={generating || generatingLock || !canSave}
           className="h-7 text-xs bg-zinc-100 text-zinc-900 hover:bg-zinc-200 gap-1.5 disabled:opacity-40"
         >
           <Sparkles className="w-3 h-3" />
-          {generating ? 'Generating...' : 'Generate Captions'}
+          {generating ? 'Timing captions...' : 'Generate Captions'}
         </Button>
       </div>
 

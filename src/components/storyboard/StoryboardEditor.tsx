@@ -19,6 +19,7 @@ import {
 interface Props {
   projectId: string
   selectedScriptId: string | null
+  generatingLock?: boolean
   onGenerate: () => Promise<void>
   onVersionChange?: (versionId: string | null) => void
 }
@@ -26,6 +27,7 @@ interface Props {
 export function StoryboardEditor({
   projectId,
   selectedScriptId,
+  generatingLock,
   onGenerate,
   onVersionChange,
 }: Props) {
@@ -187,12 +189,12 @@ export function StoryboardEditor({
         <Button
           size="sm"
           onClick={handleGenerate}
-          disabled={generating || !selectedScriptId}
+          disabled={generating || generatingLock || !selectedScriptId}
           title={!selectedScriptId ? 'Select a script first' : undefined}
           className="h-7 text-xs bg-zinc-100 text-zinc-900 hover:bg-zinc-200 gap-1.5 disabled:opacity-40"
         >
           <Sparkles className="w-3 h-3" />
-          {generating ? 'Generating...' : 'Generate Storyboard'}
+          {generating ? 'Building storyboard...' : 'Generate Storyboard'}
         </Button>
       </div>
 
