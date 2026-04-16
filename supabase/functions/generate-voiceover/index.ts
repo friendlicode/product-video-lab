@@ -94,6 +94,9 @@ Deno.serve(async (req) => {
   })
   if (!tts.ok) {
     const err = await tts.text()
+    // Surface the full ElevenLabs error in the Edge Function Logs tab
+    // so the Supabase dashboard shows it without needing DevTools.
+    console.error(`[generate-voiceover] ElevenLabs ${tts.status}: ${err}`)
     return text(`ElevenLabs error ${tts.status}: ${err}`, 502)
   }
   const audio = new Uint8Array(await tts.arrayBuffer())
