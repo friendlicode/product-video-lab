@@ -137,6 +137,8 @@ export type DbScript = {
   selected: boolean
   generated_by: string
   created_at: string
+  voice_id: string | null
+  audio_url: string | null
 }
 
 export type DbStoryboardVersion = {

@@ -11,6 +11,17 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 
+// ElevenLabs default voices. IDs match the public catalogue.
+const ELEVEN_VOICES = [
+  { id: '21m00Tcm4TlvDq8ikWAM', label: 'Rachel (female, calm)' },
+  { id: 'EXAVITQu4vr4xnSDxMaL', label: 'Bella (female, soft)' },
+  { id: 'pNInz6obpgDQGcFmaJgB', label: 'Adam (male, deep)' },
+  { id: 'ErXwobaYiN019PkySvjV', label: 'Antoni (male, warm)' },
+  { id: 'TxGEqnHWrfWFTfGW9XjX', label: 'Josh (male, young)' },
+  { id: 'VR6AewLTigWG4xSOukaG', label: 'Arnold (male, crisp)' },
+  { id: 'yoZ06aMxZJJ28mfd3POQ', label: 'Sam (male, neutral)' },
+]
+
 function SectionCard({
   title,
   description,
@@ -252,44 +263,31 @@ export function Settings() {
       </SectionCard>
 
       {/* Voiceover Provider */}
-      <SectionCard title="Voiceover Provider">
-        <div className="flex items-center gap-2 px-3 py-2 bg-zinc-800/50 rounded text-xs text-zinc-500 mb-3">
-          Voiceover integration coming soon
-        </div>
-
-        <SettingsRow label="Provider">
+      <SectionCard
+        title="Voiceover"
+        description="ElevenLabs is called via a Supabase Edge Function. The API key is stored server-side."
+      >
+        <SettingsRow
+          label="Voice"
+          description="Default voice used when you click Generate Voiceover on a script."
+        >
           <Select
-            value={settings.voiceoverProvider}
-            onValueChange={(v) => handleUpdate('voiceoverProvider', v as typeof settings.voiceoverProvider)}
+            value={settings.elevenLabsVoiceId}
+            onValueChange={(v) => handleUpdate('elevenLabsVoiceId', v)}
           >
-            <SelectTrigger className="h-8 text-xs bg-zinc-900 border-zinc-700 text-zinc-300 focus:ring-zinc-600 opacity-50">
+            <SelectTrigger className="h-8 text-xs bg-zinc-900 border-zinc-700 text-zinc-300 focus:ring-zinc-600">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="bg-zinc-900 border-zinc-700">
-              <SelectItem value="none" className="text-zinc-300 text-xs focus:bg-zinc-800 focus:text-zinc-100">None</SelectItem>
-              <SelectItem value="elevenlabs" className="text-zinc-300 text-xs focus:bg-zinc-800 focus:text-zinc-100">ElevenLabs</SelectItem>
-              <SelectItem value="openai_tts" className="text-zinc-300 text-xs focus:bg-zinc-800 focus:text-zinc-100">OpenAI TTS</SelectItem>
-            </SelectContent>
-          </Select>
-        </SettingsRow>
-
-        <SettingsRow label="API key">
-          <ApiKeyInput
-            value={settings.voiceoverApiKey}
-            onChange={(v) => handleUpdate('voiceoverApiKey', v)}
-            placeholder="API key..."
-          />
-        </SettingsRow>
-
-        <SettingsRow label="Voice preset">
-          <Select value={settings.voicePreset || 'default'} onValueChange={() => {}}>
-            <SelectTrigger className="h-8 text-xs bg-zinc-900 border-zinc-700 text-zinc-300 focus:ring-zinc-600 opacity-50">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="bg-zinc-900 border-zinc-700">
-              <SelectItem value="default" className="text-zinc-300 text-xs focus:bg-zinc-800 focus:text-zinc-100">Default</SelectItem>
-              <SelectItem value="narrator" className="text-zinc-300 text-xs focus:bg-zinc-800 focus:text-zinc-100">Narrator</SelectItem>
-              <SelectItem value="energetic" className="text-zinc-300 text-xs focus:bg-zinc-800 focus:text-zinc-100">Energetic</SelectItem>
+              {ELEVEN_VOICES.map((v) => (
+                <SelectItem
+                  key={v.id}
+                  value={v.id}
+                  className="text-zinc-300 text-xs focus:bg-zinc-800 focus:text-zinc-100"
+                >
+                  {v.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </SettingsRow>

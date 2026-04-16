@@ -16,6 +16,8 @@ export type AppSettings = {
   voiceoverProvider: 'elevenlabs' | 'openai_tts' | 'none'
   voiceoverApiKey: string
   voicePreset: string
+  // ElevenLabs voice id used by the generate-voiceover Edge Function.
+  elevenLabsVoiceId: string
   // Render (placeholder)
   renderProvider: 'remotion' | 'custom_worker' | 'none'
   workerUrl: string
@@ -29,9 +31,10 @@ export const DEFAULT_SETTINGS: AppSettings = {
   highStakesModel: 'gpt-4o',
   lightweightModel: 'gpt-4o-mini',
   temperature: 0.7,
-  voiceoverProvider: 'none',
+  voiceoverProvider: 'elevenlabs',
   voiceoverApiKey: '',
   voicePreset: '',
+  elevenLabsVoiceId: '21m00Tcm4TlvDq8ikWAM', // Rachel
   renderProvider: 'remotion',
   workerUrl: '',
 }

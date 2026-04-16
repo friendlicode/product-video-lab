@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Sparkles, Save } from 'lucide-react'
+import { Sparkles, Save, AudioLines } from 'lucide-react'
 import type { DbScript } from '@/types/db'
 import type { NarrativeRole } from '@/types/index'
 import { NARRATIVE_ROLES } from '@/lib/utils'
@@ -22,6 +22,7 @@ interface Props {
   onSelectScript: (id: string) => Promise<void>
   onUpdateScript: (id: string, fields: UpdateScriptData) => Promise<unknown>
   onGenerate: () => Promise<void>
+  onGenerateVoiceover: (scriptId: string, text: string) => Promise<void>
 }
 
 const textareaCls =
@@ -35,9 +36,11 @@ export function ScriptEditor({
   onSelectScript,
   onUpdateScript,
   onGenerate,
+  onGenerateVoiceover,
 }: Props) {
   const [viewId, setViewId] = useState<string | null>(null)
   const [generating, setGenerating] = useState(false)
+  const [generatingVoiceover, setGeneratingVoiceover] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
@@ -105,6 +108,16 @@ export function ScriptEditor({
   async function handleGenerate() {
     setGenerating(true)
     try { await onGenerate() } finally { setGenerating(false) }
+  }
+
+  async function handleGenerateVoiceover() {
+    if (!viewScript || !voiceover.trim()) return
+    setGeneratingVoiceover(true)
+    try {
+      await onGenerateVoiceover(viewScript.id, voiceover)
+    } finally {
+      setGeneratingVoiceover(false)
+    }
   }
 
   if (loading) {
@@ -217,9 +230,22 @@ export function ScriptEditor({
 
           {/* Voiceover */}
           <div>
-            <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wide mb-2">
-              Voiceover Script
-            </p>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wide">
+                Voiceover Script
+              </p>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={handleGenerateVoiceover}
+                disabled={generatingVoiceover || !voiceover.trim()}
+                title={!voiceover.trim() ? 'Add voiceover text first' : undefined}
+                className="h-6 text-xs text-teal-400 hover:text-teal-300 gap-1.5 disabled:opacity-40"
+              >
+                <AudioLines className="w-3 h-3" />
+                {generatingVoiceover ? 'Generating audio...' : 'Generate Voiceover'}
+              </Button>
+            </div>
             <textarea
               value={voiceover}
               onChange={(e) => setVoiceover(e.target.value)}
@@ -227,6 +253,14 @@ export function ScriptEditor({
               placeholder="Full voiceover script..."
               className={textareaCls}
             />
+            {viewScript.audio_url && (
+              <audio
+                key={viewScript.audio_url}
+                src={viewScript.audio_url}
+                controls
+                className="w-full mt-2 h-9"
+              />
+            )}
           </div>
 
           {/* CTA Script */}

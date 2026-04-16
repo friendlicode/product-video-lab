@@ -5,6 +5,7 @@ import { useHooks } from '@/hooks/useHooks'
 import { useScripts } from '@/hooks/useScripts'
 import { useCaptions } from '@/hooks/useCaptions'
 import { useProductBrief } from '@/hooks/useProductBrief'
+import { useSettings } from '@/hooks/useSettings'
 import type { UpdateScriptData } from '@/services/scripts'
 import {
   generateStoryDirections,
@@ -13,6 +14,7 @@ import {
   generateStoryboard,
   generateCaptions,
 } from '@/services/generation'
+import { generateVoiceover } from '@/services/voiceover'
 import { StoryArcHealth } from '@/components/generation/StoryArcHealth'
 import { StoryDirections } from '@/components/generation/StoryDirections'
 import { HooksPanel } from '@/components/generation/HooksPanel'
@@ -53,6 +55,8 @@ export function CenterPanel({ projectId, onSelectedScriptChange, onActiveStorybo
 
   const { data: latestBrief } = useProductBrief(projectId)
   const hasBrief = Boolean(latestBrief)
+
+  const { settings } = useSettings()
 
   const narrativeStructure = selectedScript?.narrative_structure ?? null
 
@@ -145,6 +149,25 @@ export function CenterPanel({ projectId, onSelectedScriptChange, onActiveStorybo
     }
   }
 
+  async function handleGenerateVoiceover(scriptId: string, text: string) {
+    const voiceId = settings.elevenLabsVoiceId
+    if (!voiceId) {
+      toast.error('Pick a voice in Settings first')
+      return
+    }
+    if (!text.trim()) {
+      toast.error('Voiceover script is empty')
+      return
+    }
+    try {
+      await generateVoiceover(scriptId, text, voiceId)
+      refetchScripts()
+      toast.success('Voiceover generated!')
+    } catch (e) {
+      toast.error('Failed to generate voiceover: ' + (e as Error).message)
+    }
+  }
+
   async function handleGenerateCaptions() {
     if (!selectedScript) {
       toast.error('Select a script first')
@@ -216,6 +239,7 @@ export function CenterPanel({ projectId, onSelectedScriptChange, onActiveStorybo
               onSelectScript={selectScript}
               onUpdateScript={handleUpdateScript}
               onGenerate={handleGenerateScript}
+              onGenerateVoiceover={handleGenerateVoiceover}
             />
           </TabsContent>
 

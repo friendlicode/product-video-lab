@@ -1,7 +1,10 @@
 import { supabase } from '@/lib/supabase'
 import type { DbScript } from '@/types/db'
 
-export type SaveScriptData = Omit<DbScript, 'id' | 'project_id' | 'created_at' | 'selected' | 'version_number'>
+export type SaveScriptData = Omit<
+  DbScript,
+  'id' | 'project_id' | 'created_at' | 'selected' | 'version_number' | 'voice_id' | 'audio_url'
+>
 export type UpdateScriptData = Partial<Pick<DbScript,
   'title' | 'full_script' | 'voiceover_script' | 'cta_script' |
   'narrative_structure' | 'duration_target_seconds' | 'selected_hook_id'
