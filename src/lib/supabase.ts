@@ -28,9 +28,9 @@ export const supabase = createClient(
       fetch: fetchWithTimeout,
     },
     auth: {
-      // Replace navigator.locks with a simple no-op to avoid the
-      // "lock stolen" bug that breaks the entire auth session.
-      lock: async (_name: string, _acquireTimeout: number, fn: () => Promise<unknown>) => fn(),
+      // Replace navigator.locks with a no-op to avoid the "lock stolen"
+      // bug that breaks the entire auth session.
+      lock: <R>(_name: string, _acquireTimeout: number, fn: () => Promise<R>): Promise<R> => fn(),
     },
   }
 )
