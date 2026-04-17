@@ -10,33 +10,27 @@ if (!supabaseUrl || !supabaseAnonKey) {
   )
 }
 
-// Workaround for Supabase auth navigator.locks bug.
-// The browser's navigator.locks API can get into a state where lock requests
-// steal from each other, breaking the entire auth session. We replace the
-// locking mechanism with a simple in-memory queue that never touches
-// navigator.locks. This is safe for a single-user internal tool.
-const _locks: Record<string, Promise<unknown>> = {}
-
-function memoryLock(
-  name: string,
-  _acquireTimeout: number,
-  fn: () => Promise<unknown>
-): Promise<unknown> {
-  const prev = _locks[name] ?? Promise.resolve()
-  const next = prev.then(() => fn()).catch(() => fn())
-  _locks[name] = next.then(
-    () => { delete _locks[name] },
-    () => { delete _locks[name] }
+// Fetch wrapper with a 10-second timeout so hung requests fail fast
+// instead of freezing the whole app indefinitely.
+function fetchWithTimeout(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 10_000)
+  return fetch(input, { ...init, signal: controller.signal }).finally(() =>
+    clearTimeout(timer)
   )
-  return next
 }
 
 export const supabase = createClient(
   supabaseUrl ?? 'http://localhost:54321',
   supabaseAnonKey ?? 'placeholder',
   {
+    global: {
+      fetch: fetchWithTimeout,
+    },
     auth: {
-      lock: memoryLock,
+      // Replace navigator.locks with a simple no-op to avoid the
+      // "lock stolen" bug that breaks the entire auth session.
+      lock: async (_name: string, _acquireTimeout: number, fn: () => Promise<unknown>) => fn(),
     },
   }
 )
