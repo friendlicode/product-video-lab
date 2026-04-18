@@ -77,7 +77,14 @@ export async function saveScript(
     .single()
 
   if (error) throw error
-  return script
+
+  // Auto-select the newly generated script. This deselects any previous script
+  // for this project so the UI immediately shows the fresh content without
+  // requiring a manual "Select" click.
+  await supabase.from('scripts').update({ selected: false }).eq('project_id', projectId)
+  await supabase.from('scripts').update({ selected: true }).eq('id', script.id)
+
+  return { ...script, selected: true }
 }
 
 export async function updateScript(id: string, data: UpdateScriptData): Promise<DbScript> {

@@ -48,6 +48,14 @@ export async function saveStoryDirections(
   projectId: string,
   directions: SaveStoryDirectionData[]
 ): Promise<DbStoryDirection[]> {
+  // Deselect all existing directions so the new batch becomes the active set.
+  // We don't delete old versions — they live on in VersionHistory — but we
+  // clear the selection flag so the UI switches to the fresh generation.
+  await supabase
+    .from('story_directions')
+    .update({ selected: false })
+    .eq('project_id', projectId)
+
   const { data, error } = await supabase
     .from('story_directions')
     .insert(directions.map((d) => ({ ...d, project_id: projectId, selected: false })))
@@ -55,11 +63,23 @@ export async function saveStoryDirections(
 
   if (error) throw error
 
+  const result = data ?? []
+
+  // Auto-select the first new direction so the hooks panel immediately
+  // re-fetches for the new direction ID.
+  if (result.length > 0) {
+    await supabase
+      .from('story_directions')
+      .update({ selected: true })
+      .eq('id', result[0].id)
+    result[0] = { ...result[0], selected: true }
+  }
+
   await supabase
     .from('projects')
     .update({ status: 'story_selection' })
     .eq('id', projectId)
     .eq('status', 'briefing')
 
-  return data ?? []
+  return result
 }

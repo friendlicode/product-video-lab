@@ -40,6 +40,21 @@ export async function saveHooks(
   storyDirectionId: string,
   hooks: SaveHookData[]
 ): Promise<DbHook[]> {
+  // Remove old hooks for this direction before inserting the new batch.
+  // Old hooks are stale once we regenerate — keeping them would leave a
+  // previously-selected hook in place and prevent the script from refreshing.
+  await supabase
+    .from('hooks')
+    .delete()
+    .eq('story_direction_id', storyDirectionId)
+
+  // Deselect any existing script for this project — it was based on old hooks
+  // and is now stale. The user must regenerate the script after regenerating hooks.
+  await supabase
+    .from('scripts')
+    .update({ selected: false })
+    .eq('project_id', projectId)
+
   const { data, error } = await supabase
     .from('hooks')
     .insert(
@@ -53,5 +68,16 @@ export async function saveHooks(
     .select()
 
   if (error) throw error
-  return data ?? []
+
+  const result = data ?? []
+
+  // Auto-select the highest-scored hook so the script section can immediately
+  // proceed without requiring a manual click.
+  if (result.length > 0) {
+    const best = result.reduce((top, h) => ((h.score ?? 0) >= (top.score ?? 0) ? h : top), result[0])
+    await supabase.from('hooks').update({ selected: true }).eq('id', best.id)
+    result.forEach((h) => { h.selected = h.id === best.id })
+  }
+
+  return result
 }
