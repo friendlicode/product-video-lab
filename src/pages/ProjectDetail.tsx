@@ -1,12 +1,10 @@
 import { useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { Copy, Archive, ArchiveRestore, ArrowLeft, PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from 'lucide-react'
+import { useParams, useNavigate, Outlet } from 'react-router-dom'
+import { Copy, Archive, ArchiveRestore, ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
 import { useProject } from '@/hooks/useProject'
 import { useProjects } from '@/hooks/useProjects'
-import { LeftPanel } from '@/components/projects/LeftPanel'
-import { CenterPanel } from '@/components/projects/CenterPanel'
-import { RightPanel } from '@/components/projects/RightPanel'
+import { StageNav } from '@/components/projects/StageNav'
 import { STATUS_CONFIG } from '@/lib/projectConstants'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -25,44 +23,30 @@ function ProjectHeader({
   onArchive,
   onUnarchive,
   busy,
-  leftCollapsed,
-  rightCollapsed,
-  onToggleLeft,
-  onToggleRight,
 }: {
   project: NonNullable<ReturnType<typeof useProject>['data']>
   onDuplicate: () => void
   onArchive: () => void
   onUnarchive: () => void
   busy: boolean
-  leftCollapsed: boolean
-  rightCollapsed: boolean
-  onToggleLeft: () => void
-  onToggleRight: () => void
 }) {
   const navigate = useNavigate()
   const status = STATUS_CONFIG[project.status]
   const isArchived = project.status === 'archived'
 
   return (
-    <header className="flex items-center gap-4 px-6 py-4 border-b border-zinc-800 shrink-0">
+    <header className="flex items-center gap-4 px-6 py-3.5 border-b border-zinc-800 bg-zinc-950 shrink-0">
       <button
         onClick={() => navigate('/')}
         className="text-zinc-500 hover:text-zinc-300 transition-colors"
+        title="Back to projects"
       >
         <ArrowLeft className="w-4 h-4" />
-      </button>
-      <button
-        onClick={onToggleLeft}
-        className="text-zinc-600 hover:text-zinc-400 transition-colors"
-        title={leftCollapsed ? 'Expand left panel' : 'Collapse left panel'}
-      >
-        {leftCollapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
       </button>
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2.5">
-          <h1 className="text-base font-semibold text-zinc-100 truncate">
+          <h1 className="text-sm font-semibold text-zinc-100 truncate">
             {project.product_name}
           </h1>
           <span
@@ -71,23 +55,15 @@ function ProjectHeader({
             {status.label}
           </span>
         </div>
-        <p className="text-xs text-zinc-500 truncate mt-0.5">{project.internal_name}</p>
       </div>
 
-      <div className="flex items-center gap-2 shrink-0">
-        <button
-          onClick={onToggleRight}
-          className="text-zinc-600 hover:text-zinc-400 transition-colors"
-          title={rightCollapsed ? 'Expand right panel' : 'Collapse right panel'}
-        >
-          {rightCollapsed ? <PanelRightOpen className="w-4 h-4" /> : <PanelRightClose className="w-4 h-4" />}
-        </button>
+      <div className="flex items-center gap-1 shrink-0">
         <Button
           variant="ghost"
           size="sm"
           onClick={onDuplicate}
           disabled={busy}
-          className="text-zinc-400 hover:text-zinc-100 gap-1.5"
+          className="h-8 text-xs text-zinc-400 hover:text-zinc-100 gap-1.5 px-3"
         >
           <Copy className="w-3.5 h-3.5" />
           Duplicate
@@ -99,7 +75,7 @@ function ProjectHeader({
             size="sm"
             onClick={onUnarchive}
             disabled={busy}
-            className="text-zinc-400 hover:text-zinc-100 gap-1.5"
+            className="h-8 text-xs text-zinc-400 hover:text-zinc-100 gap-1.5 px-3"
           >
             <ArchiveRestore className="w-3.5 h-3.5" />
             Unarchive
@@ -110,7 +86,7 @@ function ProjectHeader({
             size="sm"
             onClick={onArchive}
             disabled={busy}
-            className="text-zinc-400 hover:text-amber-400 gap-1.5"
+            className="h-8 text-xs text-zinc-400 hover:text-amber-400 gap-1.5 px-3"
           >
             <Archive className="w-3.5 h-3.5" />
             Archive
@@ -123,24 +99,21 @@ function ProjectHeader({
 
 function LoadingShell() {
   return (
-    <div className="flex flex-col h-screen bg-zinc-900">
-      <header className="flex items-center gap-4 px-6 py-4 border-b border-zinc-800">
+    <div className="flex flex-col h-screen bg-zinc-950">
+      <header className="flex items-center gap-4 px-6 py-3.5 border-b border-zinc-800">
         <Skeleton className="w-4 h-4 bg-zinc-800" />
-        <div className="flex-1 space-y-2">
-          <Skeleton className="h-4 w-48 bg-zinc-800" />
-          <Skeleton className="h-3 w-32 bg-zinc-800" />
+        <div className="flex-1 space-y-1.5">
+          <Skeleton className="h-3.5 w-40 bg-zinc-800" />
         </div>
-        <Skeleton className="h-8 w-24 bg-zinc-800" />
         <Skeleton className="h-8 w-24 bg-zinc-800" />
       </header>
-      <div className="flex flex-1 overflow-hidden">
-        <div className="w-80 border-r border-zinc-800 p-4 space-y-3">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <Skeleton key={i} className="h-8 w-full bg-zinc-800" />
-          ))}
-        </div>
-        <div className="flex-1" />
-        <div className="w-90 border-l border-zinc-800" />
+      {/* StageNav skeleton */}
+      <div className="flex items-center justify-center gap-0 px-8 py-3 border-b border-zinc-800">
+        <Skeleton className="h-8 w-64 bg-zinc-800 rounded-full" />
+      </div>
+      <div className="flex-1 p-8 space-y-4">
+        <Skeleton className="h-32 w-full bg-zinc-800 rounded-xl" />
+        <Skeleton className="h-48 w-full bg-zinc-800 rounded-xl" />
       </div>
     </div>
   )
@@ -149,7 +122,7 @@ function LoadingShell() {
 function NotFound() {
   const navigate = useNavigate()
   return (
-    <div className="flex flex-col items-center justify-center h-screen text-center">
+    <div className="flex flex-col items-center justify-center h-screen text-center bg-zinc-950">
       <p className="text-4xl font-semibold text-zinc-700 mb-3">404</p>
       <p className="text-zinc-400 font-medium">Project not found</p>
       <p className="text-zinc-600 text-sm mt-1">
@@ -171,14 +144,8 @@ export function ProjectDetail() {
   const { data: project, loading, error, refetch } = useProject(id)
   const { duplicate, archive, unarchive } = useProjects()
 
-  // Lifted from CenterPanel so RightPanel can read current selections
-  const [selectedScriptId, setSelectedScriptId] = useState<string | null>(null)
-  const [activeStoryboardVersionId, setActiveStoryboardVersionId] = useState<string | null>(null)
-
   const [busy, setBusy] = useState(false)
   const [archiveOpen, setArchiveOpen] = useState(false)
-  const [leftCollapsed, setLeftCollapsed] = useState(false)
-  const [rightCollapsed, setRightCollapsed] = useState(false)
 
   async function handleDuplicate() {
     if (!id) return
@@ -227,50 +194,19 @@ export function ProjectDetail() {
   if (error || !project) return <NotFound />
 
   return (
-    <div className="flex flex-col h-screen bg-zinc-900">
+    <div className="flex flex-col h-screen bg-zinc-950">
       <ProjectHeader
         project={project}
         onDuplicate={handleDuplicate}
         onArchive={() => setArchiveOpen(true)}
         onUnarchive={handleUnarchive}
         busy={busy}
-        leftCollapsed={leftCollapsed}
-        rightCollapsed={rightCollapsed}
-        onToggleLeft={() => setLeftCollapsed((v) => !v)}
-        onToggleRight={() => setRightCollapsed((v) => !v)}
       />
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* Left panel */}
-        <div
-          className={`shrink-0 border-r border-zinc-800 overflow-y-auto transition-[width] duration-200 ${
-            leftCollapsed ? 'w-0 overflow-hidden' : 'w-80'
-          }`}
-        >
-          <LeftPanel projectId={id!} project={project} onProjectUpdate={refetch} />
-        </div>
+      <StageNav projectId={id!} />
 
-        {/* Center panel */}
-        <div className="flex-1 overflow-hidden">
-          <CenterPanel
-            projectId={id!}
-            onSelectedScriptChange={setSelectedScriptId}
-            onActiveStoryboardVersionChange={setActiveStoryboardVersionId}
-          />
-        </div>
-
-        {/* Right panel */}
-        <div
-          className={`shrink-0 border-l border-zinc-800 overflow-hidden transition-[width] duration-200 ${
-            rightCollapsed ? 'w-0' : 'w-[360px]'
-          }`}
-        >
-          <RightPanel
-            projectId={id!}
-            selectedScriptId={selectedScriptId}
-            activeStoryboardVersionId={activeStoryboardVersionId}
-          />
-        </div>
+      <div className="flex-1 overflow-hidden">
+        <Outlet />
       </div>
 
       {/* Archive confirmation dialog */}

@@ -1,138 +1,110 @@
 import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, ChevronDown, ChevronRight } from 'lucide-react'
 import { useProjects } from '@/hooks/useProjects'
 import type { TargetPlatform, TonePreset } from '@/types/index'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 
 // ─── Option lists ──────────────────────────────────────────────────────────────
 
-const PLATFORM_OPTIONS: { value: TargetPlatform; label: string }[] = [
-  { value: 'linkedin', label: 'LinkedIn' },
-  { value: 'twitter_x', label: 'Twitter/X' },
-  { value: 'youtube_short', label: 'YouTube Short' },
-  { value: 'youtube_long', label: 'YouTube (long)' },
-  { value: 'instagram_reel', label: 'Instagram Reel' },
-  { value: 'tiktok', label: 'TikTok' },
-  { value: 'website', label: 'Website' },
-  { value: 'pitch_deck', label: 'Pitch Deck' },
-  { value: 'other', label: 'Other' },
+const PLATFORM_OPTIONS: { value: TargetPlatform; label: string; emoji: string }[] = [
+  { value: 'linkedin',       label: 'LinkedIn',       emoji: '💼' },
+  { value: 'instagram_reel', label: 'Instagram',      emoji: '📸' },
+  { value: 'youtube_short',  label: 'YouTube Short',  emoji: '▶️' },
+  { value: 'youtube_long',   label: 'YouTube',        emoji: '🎬' },
+  { value: 'tiktok',         label: 'TikTok',         emoji: '🎵' },
+  { value: 'twitter_x',      label: 'Twitter/X',      emoji: '𝕏' },
+  { value: 'website',        label: 'Website',        emoji: '🌐' },
+  { value: 'pitch_deck',     label: 'Pitch Deck',     emoji: '📊' },
 ]
 
 const TONE_OPTIONS: { value: TonePreset; label: string; description: string }[] = [
-  { value: 'bold', label: 'Bold', description: 'Direct, confident, unafraid to make a claim' },
-  {
-    value: 'conversational',
-    label: 'Conversational',
-    description: 'Friendly and approachable, like talking to a peer',
-  },
-  {
-    value: 'professional',
-    label: 'Professional',
-    description: 'Polished and credible, for enterprise audiences',
-  },
-  {
-    value: 'founder_raw',
-    label: 'Founder Raw',
-    description: 'Authentic and unfiltered, straight from the builder',
-  },
-  {
-    value: 'hype',
-    label: 'Hype',
-    description: 'High energy and exciting, designed to generate buzz',
-  },
-  {
-    value: 'minimal',
-    label: 'Minimal',
-    description: 'Clean and understated, letting the product speak',
-  },
-  {
-    value: 'storyteller',
-    label: 'Storyteller',
-    description: 'Narrative-driven with a strong emotional through-line',
-  },
+  { value: 'bold',          label: 'Bold',         description: 'Direct and confident' },
+  { value: 'conversational',label: 'Casual',       description: 'Friendly and approachable' },
+  { value: 'professional',  label: 'Professional', description: 'Polished, enterprise feel' },
+  { value: 'founder_raw',   label: 'Founder',      description: 'Authentic, straight from the builder' },
+  { value: 'hype',          label: 'Hype',         description: 'High energy and exciting' },
+  { value: 'minimal',       label: 'Minimal',      description: 'Clean, let the product speak' },
+  { value: 'storyteller',   label: 'Storyteller',  description: 'Narrative-driven with emotional arc' },
 ]
 
-// ─── Form field helpers ────────────────────────────────────────────────────────
+// ─── Chip button ───────────────────────────────────────────────────────────────
 
-function Field({
-  id,
-  label,
-  required,
+function Chip({
+  selected,
+  onClick,
   children,
 }: {
-  id: string
-  label: string
-  required?: boolean
+  selected: boolean
+  onClick: () => void
   children: React.ReactNode
 }) {
   return (
-    <div className="space-y-1.5">
-      <Label htmlFor={id} className="text-zinc-300 text-sm">
-        {label}
-        {required && <span className="text-zinc-600 ml-1">*</span>}
-      </Label>
+    <button
+      type="button"
+      onClick={onClick}
+      className={`
+        px-3 py-1.5 rounded-lg border text-sm font-medium transition-all
+        ${selected
+          ? 'border-violet-600 bg-violet-600/15 text-violet-300 ring-1 ring-violet-600/40'
+          : 'border-zinc-700 bg-zinc-800 text-zinc-400 hover:border-zinc-500 hover:text-zinc-200'
+        }
+      `}
+    >
       {children}
-    </div>
+    </button>
   )
 }
+
+// ─── Page ──────────────────────────────────────────────────────────────────────
 
 const inputCls =
   'bg-zinc-900 border-zinc-700 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-zinc-600'
 const textareaCls =
   'bg-zinc-900 border-zinc-700 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-zinc-600 resize-none'
 
-// ─── Page ──────────────────────────────────────────────────────────────────────
-
 export function NewProject() {
   const navigate = useNavigate()
   const { create } = useProjects()
 
-  const [internalName, setInternalName] = useState('')
+  // Required
   const [productName, setProductName] = useState('')
   const [productDescription, setProductDescription] = useState('')
-  const [targetAudience, setTargetAudience] = useState('')
+
+  // Chip selectors
   const [targetPlatform, setTargetPlatform] = useState<TargetPlatform | ''>('')
-  const [desiredOutcome, setDesiredOutcome] = useState('')
   const [tonePreset, setTonePreset] = useState<TonePreset | ''>('')
+
+  // More options
+  const [moreOpen, setMoreOpen] = useState(false)
+  const [targetAudience, setTargetAudience] = useState('')
   const [cta, setCta] = useState('')
+  const [desiredOutcome, setDesiredOutcome] = useState('')
+  const [internalNameOverride, setInternalNameOverride] = useState('')
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
-
-  function validate() {
-    const errors: Record<string, string> = {}
-    if (!internalName.trim()) errors.internal_name = 'Internal name is required'
-    if (!productName.trim()) errors.product_name = 'Product name is required'
-    return errors
-  }
+  const [nameError, setNameError] = useState('')
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     setError(null)
 
-    const errors = validate()
-    if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors)
+    if (!productName.trim()) {
+      setNameError('Product name is required')
       return
     }
-    setFieldErrors({})
+    setNameError('')
     setLoading(true)
+
+    const autoInternalName = `${productName.trim().toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`
 
     try {
       const project = await create({
-        internal_name: internalName.trim(),
+        internal_name: internalNameOverride.trim() || autoInternalName,
         product_name: productName.trim(),
         product_description: productDescription.trim() || undefined,
         target_audience: targetAudience.trim() || undefined,
@@ -141,7 +113,7 @@ export function NewProject() {
         tone_preset: tonePreset || undefined,
         cta: cta.trim() || undefined,
       })
-      navigate(`/projects/${project.id}`)
+      navigate(`/projects/${project.id}/script`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create project')
     } finally {
@@ -150,185 +122,195 @@ export function NewProject() {
   }
 
   return (
-    <div className="p-8 max-w-2xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-8">
-        <button
-          onClick={() => navigate('/')}
-          className="text-zinc-500 hover:text-zinc-300 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-        </button>
-        <div>
-          <h1 className="text-xl font-semibold text-zinc-100">New Project</h1>
-          <p className="text-sm text-zinc-500 mt-0.5">Set up a new product video project</p>
+    <div className="min-h-full bg-zinc-900 flex items-start justify-center pt-12 px-4 pb-16">
+      <div className="w-full max-w-xl">
+
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-8">
+          <button
+            type="button"
+            onClick={() => navigate('/')}
+            className="text-zinc-500 hover:text-zinc-300 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </button>
+          <div>
+            <h1 className="text-xl font-semibold text-zinc-100">New Project</h1>
+            <p className="text-sm text-zinc-500 mt-0.5">What are you making a video about?</p>
+          </div>
         </div>
-      </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Core identity */}
-        <div className="space-y-4 pb-6 border-b border-zinc-800">
-          <Field id="internal_name" label="Internal Name" required>
-            <Input
-              id="internal_name"
-              value={internalName}
-              onChange={(e) => {
-                setInternalName(e.target.value)
-                if (fieldErrors.internal_name) setFieldErrors((f) => ({ ...f, internal_name: '' }))
-              }}
-              placeholder="e.g. ProspectZero Q3 Launch"
-              className={inputCls}
-            />
-            {fieldErrors.internal_name && (
-              <p className="text-xs text-red-400 mt-1">{fieldErrors.internal_name}</p>
-            )}
-          </Field>
+        <form onSubmit={handleSubmit} className="space-y-6">
 
-          <Field id="product_name" label="Product Name" required>
+          {/* Product name — required */}
+          <div className="space-y-1.5">
+            <Label htmlFor="product_name" className="text-zinc-300 text-sm">
+              Product Name <span className="text-violet-500">*</span>
+            </Label>
             <Input
               id="product_name"
               value={productName}
               onChange={(e) => {
                 setProductName(e.target.value)
-                if (fieldErrors.product_name) setFieldErrors((f) => ({ ...f, product_name: '' }))
+                if (nameError) setNameError('')
               }}
-              placeholder="e.g. ProspectZero"
+              placeholder="e.g. Acme Analytics"
               className={inputCls}
+              autoFocus
             />
-            {fieldErrors.product_name && (
-              <p className="text-xs text-red-400 mt-1">{fieldErrors.product_name}</p>
-            )}
-          </Field>
+            {nameError && <p className="text-xs text-red-400">{nameError}</p>}
+          </div>
 
-          <Field id="product_description" label="Product Description">
+          {/* Description */}
+          <div className="space-y-1.5">
+            <Label htmlFor="description" className="text-zinc-300 text-sm">Description</Label>
             <Textarea
-              id="product_description"
+              id="description"
               value={productDescription}
               onChange={(e) => setProductDescription(e.target.value)}
-              placeholder="What does this product do? What problem does it solve?"
+              placeholder="What does it do? What problem does it solve?"
               rows={3}
               className={textareaCls}
             />
-          </Field>
-        </div>
+          </div>
 
-        {/* Audience and distribution */}
-        <div className="space-y-4 pb-6 border-b border-zinc-800">
-          <Field id="target_audience" label="Target Audience">
-            <Textarea
-              id="target_audience"
-              value={targetAudience}
-              onChange={(e) => setTargetAudience(e.target.value)}
-              placeholder="Who is this video for? Describe your ideal viewer."
-              rows={2}
-              className={textareaCls}
-            />
-          </Field>
+          {/* Platform chips */}
+          <div className="space-y-2.5">
+            <Label className="text-zinc-300 text-sm">Platform</Label>
+            <div className="flex flex-wrap gap-2">
+              {PLATFORM_OPTIONS.map((p) => (
+                <Chip
+                  key={p.value}
+                  selected={targetPlatform === p.value}
+                  onClick={() => setTargetPlatform(targetPlatform === p.value ? '' : p.value)}
+                >
+                  <span className="mr-1.5">{p.emoji}</span>{p.label}
+                </Chip>
+              ))}
+            </div>
+          </div>
 
-          <Field id="target_platform" label="Target Platform">
-            <Select
-              value={targetPlatform}
-              onValueChange={(v) => setTargetPlatform(v as TargetPlatform)}
+          {/* Tone chips */}
+          <div className="space-y-2.5">
+            <Label className="text-zinc-300 text-sm">Tone</Label>
+            <div className="flex flex-wrap gap-2">
+              {TONE_OPTIONS.map((t) => (
+                <Chip
+                  key={t.value}
+                  selected={tonePreset === t.value}
+                  onClick={() => setTonePreset(tonePreset === t.value ? '' : t.value)}
+                >
+                  {t.label}
+                </Chip>
+              ))}
+            </div>
+            {tonePreset && (
+              <p className="text-xs text-zinc-500 mt-1">
+                {TONE_OPTIONS.find((t) => t.value === tonePreset)?.description}
+              </p>
+            )}
+          </div>
+
+          {/* More options accordion */}
+          <div className="border border-zinc-800 rounded-xl overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setMoreOpen((v) => !v)}
+              className="w-full flex items-center gap-2 px-4 py-3 text-left text-sm text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40 transition-colors"
             >
-              <SelectTrigger
-                id="target_platform"
-                className="bg-zinc-900 border-zinc-700 text-zinc-300 focus:ring-zinc-600"
-              >
-                <SelectValue placeholder="Select a platform" />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-700">
-                {PLATFORM_OPTIONS.map((o) => (
-                  <SelectItem
-                    key={o.value}
-                    value={o.value}
-                    className="text-zinc-300 focus:bg-zinc-800 focus:text-zinc-100"
-                  >
-                    {o.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Field>
+              {moreOpen
+                ? <ChevronDown className="w-4 h-4 text-zinc-600" />
+                : <ChevronRight className="w-4 h-4 text-zinc-600" />
+              }
+              More options
+              <span className="text-xs text-zinc-600 ml-1">audience, CTA, internal name</span>
+            </button>
 
-          <Field id="desired_outcome" label="Desired Outcome">
-            <Textarea
-              id="desired_outcome"
-              value={desiredOutcome}
-              onChange={(e) => setDesiredOutcome(e.target.value)}
-              placeholder="What should viewers do or feel after watching?"
-              rows={2}
-              className={textareaCls}
-            />
-          </Field>
-        </div>
+            {moreOpen && (
+              <div className="border-t border-zinc-800 px-4 py-4 space-y-4 bg-zinc-800/20">
+                <div className="space-y-1.5">
+                  <Label htmlFor="audience" className="text-zinc-300 text-sm">Target Audience</Label>
+                  <Textarea
+                    id="audience"
+                    value={targetAudience}
+                    onChange={(e) => setTargetAudience(e.target.value)}
+                    placeholder="Who is this for? e.g. startup founders, enterprise CTOs..."
+                    rows={2}
+                    className={textareaCls}
+                  />
+                </div>
 
-        {/* Style */}
-        <div className="space-y-4 pb-6 border-b border-zinc-800">
-          <Field id="tone_preset" label="Tone Preset">
-            <Select
-              value={tonePreset}
-              onValueChange={(v) => setTonePreset(v as TonePreset)}
+                <div className="space-y-1.5">
+                  <Label htmlFor="cta" className="text-zinc-300 text-sm">Call to Action</Label>
+                  <Input
+                    id="cta"
+                    value={cta}
+                    onChange={(e) => setCta(e.target.value)}
+                    placeholder='e.g. "Start free trial" or "Book a demo"'
+                    className={inputCls}
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="outcome" className="text-zinc-300 text-sm">Desired Outcome</Label>
+                  <Textarea
+                    id="outcome"
+                    value={desiredOutcome}
+                    onChange={(e) => setDesiredOutcome(e.target.value)}
+                    placeholder="What should viewers do or feel after watching?"
+                    rows={2}
+                    className={textareaCls}
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="internal_name" className="text-zinc-300 text-sm">
+                    Internal Name
+                    <span className="text-zinc-600 ml-2 font-normal text-xs">(auto-generated if left blank)</span>
+                  </Label>
+                  <Input
+                    id="internal_name"
+                    value={internalNameOverride}
+                    onChange={(e) => setInternalNameOverride(e.target.value)}
+                    placeholder={
+                      productName
+                        ? `${productName.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`
+                        : 'e.g. acme-analytics-q3-launch'
+                    }
+                    className={inputCls}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Error */}
+          {error && (
+            <p className="text-sm text-red-400 bg-red-950/40 border border-red-900/50 rounded-lg px-3 py-2">
+              {error}
+            </p>
+          )}
+
+          {/* Actions */}
+          <div className="flex items-center gap-3 pt-2">
+            <Button
+              type="submit"
+              disabled={loading}
+              className="bg-violet-600 hover:bg-violet-500 text-white px-6"
             >
-              <SelectTrigger
-                id="tone_preset"
-                className="bg-zinc-900 border-zinc-700 text-zinc-300 focus:ring-zinc-600"
-              >
-                <SelectValue placeholder="Select a tone" />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-zinc-700">
-                {TONE_OPTIONS.map((o) => (
-                  <SelectItem
-                    key={o.value}
-                    value={o.value}
-                    className="text-zinc-300 focus:bg-zinc-800 focus:text-zinc-100"
-                  >
-                    <div>
-                      <span className="font-medium">{o.label}</span>
-                      <span className="text-zinc-500 ml-2 text-xs">{o.description}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Field>
-
-          <Field id="cta" label="Call to Action">
-            <Input
-              id="cta"
-              value={cta}
-              onChange={(e) => setCta(e.target.value)}
-              placeholder='e.g. "Start free trial" or "Book a demo"'
-              className={inputCls}
-            />
-          </Field>
-        </div>
-
-        {/* Error */}
-        {error && (
-          <p className="text-sm text-red-400 bg-red-950/40 border border-red-900/50 rounded-md px-3 py-2">
-            {error}
-          </p>
-        )}
-
-        {/* Actions */}
-        <div className="flex items-center gap-3">
-          <Button
-            type="submit"
-            disabled={loading}
-            className="bg-zinc-100 text-zinc-900 hover:bg-zinc-200"
-          >
-            {loading ? 'Creating...' : 'Create Project'}
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => navigate('/')}
-            className="text-zinc-400 hover:text-zinc-200"
-          >
-            Cancel
-          </Button>
-        </div>
-      </form>
+              {loading ? 'Creating...' : 'Create Project →'}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => navigate('/')}
+              className="text-zinc-500 hover:text-zinc-200"
+            >
+              Cancel
+            </Button>
+          </div>
+        </form>
+      </div>
     </div>
   )
 }

@@ -9,6 +9,9 @@ import { ProjectDetail } from '@/pages/ProjectDetail'
 import { RenderQueue } from '@/pages/RenderQueue'
 import { Settings } from '@/pages/Settings'
 import { AdminExemplars } from '@/pages/AdminExemplars'
+import { ScriptStudio } from '@/pages/project/ScriptStudio'
+import { StoryboardStudio } from '@/pages/project/StoryboardStudio'
+import { RenderStudio } from '@/pages/project/RenderStudio'
 
 function ProtectedRoute() {
   const { user, loading } = useAuthContext()
@@ -49,7 +52,15 @@ export function App() {
             <Route element={<AppLayout />}>
               <Route index element={<ProjectList />} />
               <Route path="projects/new" element={<NewProject />} />
-              <Route path="projects/:id" element={<ProjectDetail />} />
+
+              {/* Project workspace — nested studio pages */}
+              <Route path="projects/:id" element={<ProjectDetail />}>
+                <Route index element={<Navigate to="script" replace />} />
+                <Route path="script" element={<ScriptStudio />} />
+                <Route path="storyboard" element={<StoryboardStudio />} />
+                <Route path="render" element={<RenderStudio />} />
+              </Route>
+
               <Route path="render-queue" element={<RenderQueue />} />
               <Route path="settings" element={<Settings />} />
               <Route path="admin/exemplars" element={<AdminExemplars />} />
