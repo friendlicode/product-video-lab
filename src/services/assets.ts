@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase'
 import type { AssetType } from '@/types/index'
 import type { DbProjectAsset } from '@/types/db'
+import { analyzeImageAsset } from '@/services/assetAnalysis'
 
 const BUCKET = 'project-assets'
 
@@ -83,6 +84,15 @@ export async function uploadAsset(
     .single()
 
   if (insertErr) throw insertErr
+
+  // Fire-and-forget: analyze image assets with GPT-4 Vision.
+  // We do not await so upload returns immediately; analysis runs in background.
+  if (file.type.startsWith('image/')) {
+    analyzeImageAsset(asset.id, asset.file_url, asset.file_name).catch((err) =>
+      console.warn('[assets] Vision analysis failed (non-fatal):', err)
+    )
+  }
+
   return asset
 }
 

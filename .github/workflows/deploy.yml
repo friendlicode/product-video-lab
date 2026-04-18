@@ -1,0 +1,46 @@
+name: Deploy Supabase Edge Functions
+
+# Runs automatically every time you push to main — no terminal needed.
+# One-time setup: add SUPABASE_ACCESS_TOKEN and SUPABASE_PROJECT_REF
+# to your GitHub repo secrets (instructions below).
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      # Only re-deploy when Edge Function code actually changes
+      - 'supabase/functions/**'
+
+  # Lets you click "Run workflow" in GitHub Actions tab to trigger manually
+  workflow_dispatch:
+
+jobs:
+  deploy-edge-functions:
+    name: Deploy Edge Functions
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Deploy select-music
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          supabase functions deploy select-music \
+            --project-ref ${{ secrets.SUPABASE_PROJECT_REF }} \
+            --no-verify-jwt
+
+      - name: Deploy generate-voiceover
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          supabase functions deploy generate-voiceover \
+            --project-ref ${{ secrets.SUPABASE_PROJECT_REF }} \
+            --no-verify-jwt

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
-import { LayoutGrid, Film, Settings, Clapperboard, LogOut } from 'lucide-react'
+import { LayoutGrid, Film, Settings, Clapperboard, LogOut, BookOpen } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuthContext } from '@/contexts/AuthContext'
 
@@ -8,6 +8,10 @@ const NAV_ITEMS = [
   { to: '/', label: 'Projects', icon: LayoutGrid, end: true },
   { to: '/render-queue', label: 'Render Queue', icon: Film, end: false },
   { to: '/settings', label: 'Settings', icon: Settings, end: false },
+]
+
+const ADMIN_NAV_ITEMS = [
+  { to: '/admin/exemplars', label: 'Exemplar Library', icon: BookOpen, end: false },
 ]
 
 export function Sidebar() {
@@ -58,6 +62,33 @@ export function Sidebar() {
             {label}
           </NavLink>
         ))}
+
+        {/* Admin-only section */}
+        {dbUser?.role === 'admin' && (
+          <>
+            <div className="mt-4 mb-1 px-3">
+              <p className="text-[10px] uppercase tracking-widest text-zinc-700 font-medium">Admin</p>
+            </div>
+            {ADMIN_NAV_ITEMS.map(({ to, label, icon: Icon, end }) => (
+              <NavLink
+                key={to}
+                to={to}
+                end={end}
+                className={({ isActive }) =>
+                  cn(
+                    'flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors',
+                    isActive
+                      ? 'bg-zinc-800 text-zinc-100 font-medium'
+                      : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/60'
+                  )
+                }
+              >
+                <Icon className="w-4 h-4 shrink-0" strokeWidth={1.75} />
+                {label}
+              </NavLink>
+            ))}
+          </>
+        )}
       </nav>
 
       {/* User footer */}

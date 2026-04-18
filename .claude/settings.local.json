@@ -16,7 +16,19 @@
       "Bash(npx supabase:*)",
       "Bash(npx shadcn@latest add button card input textarea select badge skeleton label separator --yes)",
       "Bash(npx shadcn@latest add dialog collapsible --yes)",
-      "Bash(npx shadcn@latest add tabs --yes)"
+      "Bash(npx shadcn@latest add tabs --yes)",
+      "Bash(sed -i '' \"s/{ model: 'gpt-4o', response_format:/{ model: getSettings\\(\\).highStakesModel, response_format:/g\" src/services/generation.ts)",
+      "Bash(sed -i '' \"s/{ model: 'gpt-4o-mini', response_format:/{ model: getSettings\\(\\).lightweightModel, response_format:/g\" src/services/generation.ts)",
+      "Bash(gh auth:*)",
+      "Bash(git remote:*)",
+      "Bash(git push:*)",
+      "Bash(supabase projects:*)",
+      "Bash(npx --no supabase --version)",
+      "Bash(git branch:*)",
+      "Bash(git pull:*)",
+      "Bash(git commit -m ' *)",
+      "Bash(gh api *)",
+      "Bash(git commit *)"
     ]
   }
 }

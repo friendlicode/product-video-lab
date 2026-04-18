@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { Sparkles, Play, ChevronDown, ChevronRight, ExternalLink, RotateCcw, Layers, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRenderJobs } from '@/hooks/useRenderJobs'
@@ -17,6 +17,8 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog'
+import { MusicSelector } from '@/components/generation/MusicSelector'
+import type { SavedMusicCue } from '@/services/music'
 
 const STATUS_CONFIG: Record<
   RenderStatus,
@@ -157,6 +159,11 @@ export function RenderPanel({ projectId, selectedScriptId, selectedStoryboardVer
   const [assembling, setAssembling] = useState(false)
   const [creatingJob, setCreatingJob] = useState(false)
   const [arcWarnOpen, setArcWarnOpen] = useState(false)
+  const [_savedCue, setSavedCue] = useState<SavedMusicCue | null>(null)
+
+  const handleCueSelected = useCallback((cue: SavedMusicCue | null) => {
+    setSavedCue(cue)
+  }, [])
 
   const latestPayload = payloads?.[0] ?? null
   const canAssemble = Boolean(selectedStoryboardVersionId && selectedScriptId)
@@ -288,6 +295,30 @@ export function RenderPanel({ projectId, selectedScriptId, selectedStoryboardVer
         ) : (
           <>
             {latestPayload && <PayloadViewer payload={latestPayload} />}
+
+            {/* Music selection — shown after payload is assembled */}
+            {latestPayload && (() => {
+              const vs = (latestPayload.payload as Record<string, unknown>)?.visual_strategy as Record<string, unknown> | null
+              const pacing = vs?.pacing_curve as Array<{ energy_level?: number }> | undefined
+              const avgEnergy = pacing?.length
+                ? Math.round(pacing.reduce((s, p) => s + (p.energy_level ?? 5), 0) / pacing.length)
+                : null
+              const mood = (vs?.music_strategy as Record<string, string> | undefined)?.mood ?? null
+              return (
+                <div className="border border-zinc-800 rounded-xl p-4">
+                  <MusicSelector
+                    renderPayloadId={latestPayload.id}
+                    energyLevel={avgEnergy}
+                    mood={mood}
+                    durationSeconds={
+                      ((latestPayload.payload as Record<string, unknown>)?.scenes as Array<{ duration_seconds?: number }> | undefined)
+                        ?.reduce((s, sc) => s + (sc.duration_seconds ?? 3), 0) ?? 30
+                    }
+                    onCueSelected={handleCueSelected}
+                  />
+                </div>
+              )
+            })()}
 
             {!jobs?.length && !latestPayload ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">

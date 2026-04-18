@@ -50,6 +50,102 @@ export type DbProjectWithCounts = DbProject & {
   render_job_count: [{ count: number }]
 }
 
+// ─── Cinematic schema types (added in 006_cinematic_schema.sql) ─────────────
+
+export type MotionParams = {
+  speed?: number            // 0.5 = slow, 1 = normal, 2 = fast
+  easing?: 'linear' | 'spring' | 'ease_in' | 'ease_out' | 'ease_in_out' | 'elastic'
+  start_delay?: number      // frames to wait before starting motion
+  hold_frames?: number      // frames to hold at final position
+  amplitude?: 'subtle' | 'moderate' | 'dramatic'
+}
+
+export type RegionOfInterest = {
+  x: number       // 0–1 fraction from left
+  y: number       // 0–1 fraction from top
+  width: number   // 0–1 fraction
+  height: number  // 0–1 fraction
+}
+
+export type EmphasisBeat = {
+  time_ms: number
+  type: 'zoom' | 'flash' | 'shake' | 'scale_pop'
+  intensity: number   // 0–1
+}
+
+export type ColorTheme = {
+  primary: string      // hex
+  secondary: string
+  accent: string
+  background: string
+}
+
+export type VocalDirection = {
+  pace?: 'slow' | 'normal' | 'fast'
+  tone?: 'warm' | 'urgent' | 'authoritative' | 'excited' | 'calm'
+  pause_before_ms?: number
+  emphasis_words?: string[]
+}
+
+export type MusicSyncPoint = 'drop' | 'build' | 'release' | 'silence'
+
+export type AssetAnalysisStatus = 'pending' | 'processing' | 'complete' | 'failed'
+
+export type AssetAnalysis = {
+  ocr_text?: string
+  dominant_colors?: string[]
+  detected_regions?: Array<{ label: string; x: number; y: number; w: number; h: number }>
+  scene_boundaries_ms?: number[]   // for video assets
+  motion_estimate?: 'static' | 'slow_pan' | 'fast_cut' | 'handheld'
+  content_summary?: string
+  recommended_narrative_role?: string
+}
+
+// Caption segment — extended format (006+)
+export type CaptionEmphasisWord = {
+  word_index: number
+  style: 'bold' | 'color' | 'scale' | 'underline'
+}
+
+export type CaptionSegment = {
+  start_ms: number
+  end_ms: number
+  text: string
+  // new fields (006+):
+  emphasis_words?: CaptionEmphasisWord[]
+  per_word_timing?: Array<{ word_index: number; start_ms: number; end_ms: number }>
+  style_override?: { color?: string; font_size_scale?: number }
+}
+
+export type DbMusicCue = {
+  id: string
+  render_payload_id: string
+  track_id: string
+  track_title: string | null
+  track_artist: string | null  // added in migration 008
+  track_url: string | null
+  preview_url: string | null   // added in migration 008
+  duration_ms: number | null   // added in migration 008
+  bpm: number | null
+  key_signature: string | null
+  mood_tags: string[]
+  beat_grid_ms: number[]
+  sections: {
+    intro_end_ms?: number
+    build_end_ms?: number
+    drop_end_ms?: number
+    outro_start_ms?: number
+    // legacy flat format
+    intro?: { start_ms: number; end_ms: number }
+    build?: { start_ms: number; end_ms: number }
+    drop?: { start_ms: number; end_ms: number }
+    outro?: { start_ms: number; end_ms: number }
+  }
+  created_at: string
+}
+
+// ─── Updated asset type with analysis fields ──────────────────────────────────
+
 export type DbProjectAsset = {
   id: string
   project_id: string
@@ -67,6 +163,10 @@ export type DbProjectAsset = {
   sort_order: number
   created_by: string
   created_at: string
+  // 006+ fields:
+  semantic_tags: string[]
+  analysis: AssetAnalysis | null
+  analysis_status: AssetAnalysisStatus
 }
 
 export type DbProductBrief = {
@@ -171,6 +271,14 @@ export type DbStoryboardScene = {
   metadata: Record<string, unknown>
   created_at: string
   updated_at: string
+  // 006+ cinematic fields:
+  motion_params: MotionParams | null
+  region_of_interest: RegionOfInterest | null
+  emphasis_beats: EmphasisBeat[] | null
+  color_theme: ColorTheme | null
+  energy_level: number | null
+  music_sync_point: MusicSyncPoint | null
+  vocal_direction: VocalDirection | null
 }
 
 export type DbStoryboardVersionWithScenes = DbStoryboardVersion & {
@@ -183,7 +291,7 @@ export type DbCaptionVersion = {
   script_id: string
   storyboard_version_id: string
   version_number: number
-  segments: Array<{ start_ms: number; end_ms: number; text: string }>
+  segments: CaptionSegment[]   // 006+: extended with emphasis_words, per_word_timing
   raw_json: Record<string, unknown>
   created_at: string
 }

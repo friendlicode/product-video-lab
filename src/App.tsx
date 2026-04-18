@@ -8,6 +8,7 @@ import { NewProject } from '@/pages/NewProject'
 import { ProjectDetail } from '@/pages/ProjectDetail'
 import { RenderQueue } from '@/pages/RenderQueue'
 import { Settings } from '@/pages/Settings'
+import { AdminExemplars } from '@/pages/AdminExemplars'
 
 function ProtectedRoute() {
   const { user, loading } = useAuthContext()
@@ -51,6 +52,7 @@ export function App() {
               <Route path="projects/:id" element={<ProjectDetail />} />
               <Route path="render-queue" element={<RenderQueue />} />
               <Route path="settings" element={<Settings />} />
+              <Route path="admin/exemplars" element={<AdminExemplars />} />
             </Route>
           </Route>
         </Routes>

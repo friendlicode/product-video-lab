@@ -3,6 +3,7 @@ import { RenderPanel } from '@/components/render/RenderPanel'
 import { ApprovalPanel } from './ApprovalPanel'
 import { VersionHistory } from './VersionHistory'
 import { ActivityTimeline } from './ActivityTimeline'
+import { AssetMatchingReview } from '@/components/generation/AssetMatchingReview'
 
 interface Props {
   projectId: string
@@ -11,6 +12,7 @@ interface Props {
 }
 
 const TABS = [
+  { value: 'assets',    label: 'Assets' },
   { value: 'render',    label: 'Render' },
   { value: 'approvals', label: 'Approvals' },
   { value: 'history',   label: 'History' },
@@ -19,7 +21,7 @@ const TABS = [
 
 export function RightPanel({ projectId, selectedScriptId, activeStoryboardVersionId }: Props) {
   return (
-    <Tabs defaultValue="render" className="flex flex-col h-full">
+    <Tabs defaultValue="assets" className="flex flex-col h-full">
       <TabsList className="shrink-0 w-full rounded-none bg-zinc-950 border-b border-zinc-800 h-10 px-4 gap-0 justify-start">
         {TABS.map((tab) => (
           <TabsTrigger
@@ -33,6 +35,14 @@ export function RightPanel({ projectId, selectedScriptId, activeStoryboardVersio
       </TabsList>
 
       <div className="flex-1 overflow-hidden">
+        {/* Asset matching — runs before render to pair scenes with assets */}
+        <TabsContent value="assets" className="h-full mt-0 overflow-hidden">
+          <AssetMatchingReview
+            projectId={projectId}
+            storyboardVersionId={activeStoryboardVersionId}
+          />
+        </TabsContent>
+
         <TabsContent value="render" className="h-full mt-0 overflow-hidden">
           <RenderPanel
             projectId={projectId}
